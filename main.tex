@@ -1,0 +1,88 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+
+\title{PUEO trigger chain paper}
+\author{P.S.~Allison}
+\date{December 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+\section{Trigger filter chain}
+
+The trigger system for PUEO is fully digital and contains multiple signal 
+processing blocks to maximize the detection capability of the instrument,
+as shown in Fig.~\ref{triggerfilterchain}. The filter chain consists of
+a downsampling block, a matched filter, a CW rejection block, followed by an
+upsampling block, and finally an automatic gain control and bit reduction
+(AGC-BR) block before entering the digital beamformer. The CW rejection
+portion of the filter chain consists of up to 2 programmable digital biquad
+filters, with builds with 0, 1, and 2 biquads if needed for power reasons,
+selectable during normal operation. Both the upsampling and downsampling
+block are based on the same 33-tap finite impulse response halfband filter.
+
+\subsection{Downsample/upsample blocks}
+
+While significant power from the Askaryan signal is observed throughout the
+band, the overall SNR peaks in the lower half. This therefore encourages
+using a low-pass (halfband) filter to reduce the overall bandwidth to below
+$750\,\text{MHz}$, which also allows the remainder of the trigger chain to
+decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$ to reduce
+power. However, before the AGC-BR block, the signal is restored to
+$3000\,\text{MSa/s}$ by zero padding followed by the same halfband filter,
+allowing for finer beamforming delays.
+
+The halfband filter is a 31-tap FIR filter operating at a supersample rate
+of 8 with an additional 1 sample delay to align the center tap with the
+original sample (at $z^{-16}$, two overall system clocks). The transfer
+function is:
+\[
+\resizebox{\hsize}{!}{
+H\left(z\right)=K
+\left(
+\begin{array}{cccccccc}
+ & -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
+ & -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
++2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
+ & +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31}
+\end{array}
+\right)}
+\]
+
+where $K=2^{-15}$ for the downsample block and $K=2^{-14}$ for the
+upsample block, resulting in a net unity gain for the combination of the
+two. The symmetric nature of the filter lends itself to being
+organized as the sum of two 4-tap systolic filters on individual samples,
+with the preadd feature of the FPGA DSP block used to combine the samples
+with common coefficients but reversed order, as shown in
+Fig.~\ref{halfbandFilter}. As an example, ignoring pipeline registers,
+for one of the filters, the first DSP takes in the sample at $z^{-3}$,
+preadds the sample at $z^{-29}$, and outputs 
+$105\left(z^{-3} + z^{-29}\right)z^{-8}$, as well as the sample at
+$\left(z^{-11}\right)$ as a cascaded input. The next DSP again preadds
+the same $z^{-29}$ sample, allowing it to compute
+$1672\left(z^{-11} + z^{-21}\right)z^{-8}$ and add to the output of the
+first DSP. The additional center tap value ($+2^{14}z^{-16}$) is simply
+an upshifted value of the original input, and is added into one of the
+systolic filters at the appropriate timepoint.
+
+The same configuration is implemented for each of the 8 samples per
+system clock. For the downsample block, since the output is decimated
+afterwards, only the even samples are implemented. For the upsample
+block, since the decimated odd inputs are zero-stuffed prior, only
+the odd samples are implemented and the even samples (which only have
+the center tap) are simply delayed to align to the odd samples.
+
+The frequency response of this halfband filter is shown in
+Fig.~\ref{halfbandFilter}. The limited rejection near Nyquist results in
+some aliasing after decimation, but because the aliasing is equivalent
+in all channels, the overall beamforming is not affected.
+
+\subsection{Matched filter block}
+
+
+
+\end{document}
