@@ -3,6 +3,8 @@
 \usepackage{amsmath}
 \usepackage{tikz}
 \usetikzlibrary{dsp,chains}
+\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
+\newcommand{\z}{\mathpzc{z}}
 
 \title{PUEO trigger chain paper}
 \author{P.S.~Allison}
@@ -60,14 +62,20 @@ two. The symmetric nature of the filter lends itself to being
 organized as the sum of two 4-tap systolic filters on individual samples,
 with the preadd feature of the FPGA DSP block used to combine the samples
 with common coefficients but reversed order, as shown in
-Fig.~\ref{halfbandFilter}. As an example, ignoring pipeline registers,
-for one of the filters, the first DSP takes in the sample at $z^{-3}$,
-preadds the sample at $z^{-29}$, and outputs 
-$105\left(z^{-3} + z^{-29}\right)z^{-8}$, as well as the sample at
-$\left(z^{-11}\right)$ as a cascaded input. The next DSP again preadds
-the same $z^{-29}$ sample, allowing it to compute
-$1672\left(z^{-11} + z^{-21}\right)z^{-8}$ and add to the output of the
-first DSP. The additional center tap value ($+2^{14}z^{-16}$) is simply
+Fig.~\ref{halfbandFilter}, represented in supersample rate, where
+$x[i]=z^{i}$ and system clocks generate a delay of $z^{-M}$ where
+$M=8$.
+
+As an example, ignoring pipeline registers, for one of the filters for
+$y[7]$, the first DSP takes in $x[4]$ and preadds $x[2]z^{-3M}$. This
+generates the $105\left(z^{-3}+z^{-29}\right)$ for $z^{7}$. The
+next DSP receives $x[4]z^{-2M}$ in cascade input and the same $x[2]z^{-3M}$
+generating the $1672\left(z^{-11}+z^{-21}\right)z^{-8}$ term for $z^{7}$,
+which is added to the delayed output of the first DSP.
+This same structure is used for the $x[6]$ and $x[0]$ terms, and the
+outputs of those two chains are added together separately.
+
+The additional center tap value ($+2^{14}z^{-16}$) is simply
 an upshifted value of the original input, and is added into one of the
 systolic filters at the appropriate timepoint.
 
@@ -85,10 +93,167 @@ in all channels, the overall beamforming is not affected.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{plots/halfband_filter_resp.png}
+
+% FIR filter as block diagram
+\begin{center}
+\begin{tikzpicture}
+
+	% Place nodes using a matrix
+	\matrix (m1) [row sep=2.5mm, column sep=5mm]
+	{
+		%--------------------------------------------------------------------
+		\node[dspnodeopen,dsp/label=above] (m00) {$x[4]$};    &
+		\node[coordinate]                  (m01) {};          &
+		\node[dspnodefull]                 (m02) {};          &
+		\node[dspsquare]                   (m03) {$\z^{-2M}$}; &
+		\node[dspnodefull]                 (m04) {};          &
+		\node[dspsquare]                   (m05) {$\z^{-2M}$}; &
+		\node[dspnodefull]                 (m06) {};          &
+		\node[dspsquare]                   (m07) {$\z^{-2M}$}; &
+		\node[coordinate]                  (m08) {};          &
+		\node[coordinate]                  (m09) {};          &
+		\node[coordinate]                  (m0X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m40) {};          &
+		\node[coordinate]                  (m41) {};          &
+		\node[coordinate]                  (m42) {};          &
+		\node[coordinate]                  (m43) {};          &
+		\node[coordinate]                  (m44) {};          &
+		\node[coordinate]                  (m45) {};          &
+		\node[coordinate]                  (m46) {};          &
+		\node[coordinate]                  (m47) {};          &
+		\node[coordinate]                  (m48) {};          &
+		\node[coordinate]                  (m49) {};          &
+		\node[coordinate]                  (m4X) {};          \\
+        %--------------------------------------------------------------------
+		\node[dspnodeopen, dsp/label=above](m30) {$x[2]\z^{-3M}$};  &
+		\node[coordinate]                  (m31) {};          &
+		\node[dspadder]                    (m32) {};          &
+		\node[dspnodeopen, dsp/label=above](m33) {$x[2]\z^{-3M}$};  &
+		\node[dspadder]                    (m34) {};          &
+		\node[dspnodeopen, dsp/label=above](m35) {$x[2]\z^{-3M}$};  &
+		\node[dspadder]                    (m36) {};          &
+		\node[dspnodeopen, dsp/label=above](m37) {$x[2]\z^{-3M}$};  &
+        \node[dspadder]                    (m38) {};          &
+		\node[coordinate]                  (m39) {};          &
+        \node[coordinate]                  (m3X) {};          \\
+		%--------------------------------------------------------------------
+        \node[coordinate]                  (m10) {};          &
+		\node[coordinate]                  (m11) {};          &
+		\node[dspmixer, dsp/label=right]   (m12) {105};    &
+		\node[coordinate]                  (m13) {};          &
+		\node[dspmixer, dsp/label=right]   (m14) {1672};    &
+		\node[coordinate]                  (m15) {};          &
+		\node[dspmixer, dsp/label=right]   (m16) {-3216};    &
+		\node[coordinate]                  (m17) {};          &
+		\node[dspmixer, dsp/label=right]   (m18) {-263};    &
+		\node[coordinate]                  (m19) {};          &
+		\node[coordinate]                  (m1X) {};          \\
+		%--------------------------------------------------------------------
+		\\
+		%--------------------------------------------------------------------
+		\node[coordinate]                  (m20) {};          &
+		\node[coordinate]                  (m21) {};          &
+		\node[coordinate]                  (m22) {};          &
+		\node[dspsquare]                   (m23) {$\z^{-M}$}; &
+		\node[dspadder]                    (m24) {};          &
+		\node[dspsquare]                   (m25) {$\z^{-M}$}; &
+		\node[dspadder]                    (m26) {};          &
+		\node[dspsquare]                   (m27) {$\z^{-M}$}; &
+		\node[dspadder]                    (m28) {};          &
+		\node[coordinate]                  (m29) {};          &
+		\node[dspnodeopen,dsp/label=above] (m2X) {$y[n]$};    \\
+		%--------------------------------------------------------------------
+		\node[coordinate]                  (m50) {};          &
+		\node[coordinate]                  (m51) {};          &
+		\node[coordinate]                  (m52) {};          &
+		\node[coordinate]                  (m53) {};          &
+		\node[coordinate]                  (m54) {};          &
+		\node[dspnodeopen, dsp/label=left] (m55) {$x[7]\z^{-2M}$}; &
+		\node[coordinate]                  (m56) {};          &
+		\node[coordinate]                  (m57) {};          &
+		\node[coordinate]                  (m58) {};          &
+		\node[coordinate]                  (m59) {};          &
+		\node[coordinate]                  (m5X) {};          \\
+		%--------------------------------------------------------------------
+	};
+
+	% Draw connections
+    \begin{scope}[start chain]
+        \chainin (m55);
+        \chainin (m56) [join=by dspline];
+        \chainin (m26) [join=by dspflow];
+    \end{scope}
+	\begin{scope}[start chain]
+        \chainin (m30);
+        \chainin (m32) [join=by dspflow];
+    \end{scope}
+	\begin{scope}[start chain]
+		\chainin (m00);
+		\chainin (m02) [join=by dspflow];
+        \chainin (m42) [join=by dspline];
+        \chainin (m32) [join=by dspflow];
+        \chainin (m12) [join=by dspconn];
+		\chainin (m22) [join=by dspline];
+	\end{scope}
+
+	\foreach \i [evaluate = \i as \j using int(\i+1),
+	             evaluate = \i as \k using int(\i+2),] in {2,4,6}
+	{
+        \begin{scope}[start chain]
+            \chainin (m3\j);
+            \chainin (m3\k) [join=by dspflow];
+        \end{scope}
+		\begin{scope}[start chain]
+			\chainin (m0\i);
+			\chainin (m0\j) [join=by dspconn];
+			\chainin (m0\k) [join=by dspline];
+			\chainin (m3\k) [join=by dspconn];
+			\chainin (m1\k) [join=by dspconn];
+			\chainin (m2\k) [join=by dspconn];
+		\end{scope}
+        \begin{scope}[start chain]
+            \chainin (m2\i);
+            \chainin (m2\j) [join=by dspconn];
+            \chainin (m2\k) [join=by dspconn];
+        \end{scope}            
+	}
+
+	\draw[dspflow] (m28) -- (m2X);
+\end{tikzpicture}
+\end{center}
 \end{figure}
 
 \subsection{Matched filter block}
 
+The matched filter block mitigates the effect of the antenna and signal
+processing chain on the SNR of the input signal. In order to implement a
+power and resource-efficient matched filter, a multiplierless filter
+was developed by exploiting the fact that the impulse response of the system
+has an approximately exponential falloff in voltage. Therefore, the impulse
+response was normalized to the peak value, and individual samples were
+rounded to $0$, $\pm\frac{1}{4}$, $\pm\frac{1}{2}$, or $\pm1$.
+A comparison of the normalized impulse response (post-halfband filter)
+and the simplified impulse response in both the time and frequency
+domain in shown in Fig.~\ref{matchedimpulse}. The reduced response is then
+decimated by a factor of 2 to match the $1500~\text{MSa}/\text{s}$ sample
+rate in the intermediate part of the processing chain,
+time-reversed to create a matched filter, and then scaled by the nearest
+power of 2 to a unity gain. The remaining gain variation is unimportant
+as it is absorbed in the AGC-BR block.
 
+The transfer function of the matched filter at a sample rate of
+$1500~\text{MSa}/\text{s}$ is given by
+
+\begin{align*}
+H\left(z\right) = \frac{1}{32} & (-1+z^{-3}-z^{-5}+z^{-7}+z^{-8} \\
+                  & -z^{-9}-z^{-10}+z^{-11}+z^{-12}-z^{-13}   \\
+                  & -2z^{-14}+2z^{-15}-4z^{-17}+4z^{-18}-2z^{-19}+z^{-20}) \\
+\end{align*}
+
+The filter is then simplified by pre-computing $P=\left(1-z^{-1}\right)$
+for each sample. The computation of $P$ requires 4 adders at $M=4$, but
+reduces the number of terms from $16M$ to $11M$, significantly
+reducing the complexity of the filter.
 
 \end{document}
