@@ -42,13 +42,13 @@
 		%--------------------------------------------------------------------
         \node[coordinate]                  (m10) {};          &
 		\node[coordinate]                  (m11) {};          &
-		\node[dspmixer, dsp/label=right]   (m12) {105};    &
+		\node[dspmixer, dsp/label=left]   (m12) {105};    &
 		\node[coordinate]                  (m13) {};          &
-		\node[dspmixer, dsp/label=right]   (m14) {1672};    &
+		\node[dspmixer, dsp/label=left]   (m14) {1672};    &
 		\node[coordinate]                  (m15) {};          &
-		\node[dspmixer, dsp/label=right]   (m16) {-3216};    &
+		\node[dspmixer, dsp/label=left]   (m16) {-3216};    &
 		\node[coordinate]                  (m17) {};          &
-		\node[dspmixer, dsp/label=right]   (m18) {-263};    &
+		\node[dspmixer, dsp/label=left]   (m18) {-263};    &
 		\node[coordinate]                  (m19) {};          &
 		\node[coordinate]                  (m1X) {};          \\
 		%--------------------------------------------------------------------
@@ -116,13 +116,13 @@
 		%--------------------------------------------------------------------
         \node[coordinate]                  (m90) {};          &
 		\node[coordinate]                  (m91) {};          &
-		\node[dspmixer, dsp/label=right]   (m92) {-23};    &
+		\node[dspmixer, dsp/label=left]   (m92) {-23};    &
 		\node[coordinate]                  (m93) {};          &
-		\node[dspmixer, dsp/label=right]   (m94) {-949};    &
+		\node[dspmixer, dsp/label=left]   (m94) {-949};    &
 		\node[coordinate]                  (m95) {};          &
-		\node[dspmixer, dsp/label=right]   (m96) {10342};    &
+		\node[dspmixer, dsp/label=left]   (m96) {10342};    &
 		\node[coordinate]                  (m97) {};          &
-		\node[dspmixer, dsp/label=right]   (m98) {526};    &
+		\node[dspmixer, dsp/label=left]   (m98) {526};    &
 		\node[coordinate]                  (m99) {};          &
 		\node[coordinate]                  (m9X) {};          \\
 		%--------------------------------------------------------------------
