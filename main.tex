@@ -161,7 +161,7 @@ in all channels, the overall beamforming is not affected.
 		\node[dspadder]                    (m26) {};          &
 		\node[dspsquare]                   (m27) {$\z^{-M}$}; &
 		\node[dspadder]                    (m28) {};          &
-		\node[coordinate]                  (m29) {};          &
+		\node[dspadder]                    (m29) {};          &
 		\node[dspnodeopen,dsp/label=above] (m2X) {$y[n]$};    \\
 		%--------------------------------------------------------------------
 		\node[coordinate]                  (m50) {};          &
@@ -176,6 +176,65 @@ in all channels, the overall beamforming is not affected.
 		\node[coordinate]                  (m59) {};          &
 		\node[coordinate]                  (m5X) {};          \\
 		%--------------------------------------------------------------------
+		\node[dspnodeopen,dsp/label=above] (m60) {$x[6]$};    &
+		\node[coordinate]                  (m61) {};          &
+		\node[dspnodefull]                 (m62) {};          &
+		\node[dspsquare]                   (m63) {$\z^{-2M}$}; &
+		\node[dspnodefull]                 (m64) {};          &
+		\node[dspsquare]                   (m65) {$\z^{-2M}$}; &
+		\node[dspnodefull]                 (m66) {};          &
+		\node[dspsquare]                   (m67) {$\z^{-2M}$}; &
+		\node[coordinate]                  (m68) {};          &
+		\node[coordinate]                  (m69) {};          &
+		\node[coordinate]                  (m6X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m70) {};          &
+		\node[coordinate]                  (m71) {};          &
+		\node[coordinate]                  (m72) {};          &
+		\node[coordinate]                  (m73) {};          &
+		\node[coordinate]                  (m74) {};          &
+		\node[coordinate]                  (m75) {};          &
+		\node[coordinate]                  (m76) {};          &
+		\node[coordinate]                  (m77) {};          &
+		\node[coordinate]                  (m78) {};          &
+		\node[coordinate]                  (m79) {};          &
+		\node[coordinate]                  (m7X) {};          \\
+        %--------------------------------------------------------------------
+		\node[dspnodeopen, dsp/label=above](m80) {$x[0]\z^{-3M}$};  &
+		\node[coordinate]                  (m81) {};          &
+		\node[dspadder]                    (m82) {};          &
+		\node[dspnodeopen, dsp/label=above](m83) {$x[0]\z^{-3M}$};  &
+		\node[dspadder]                    (m84) {};          &
+		\node[dspnodeopen, dsp/label=above](m85) {$x[0]\z^{-3M}$};  &
+		\node[dspadder]                    (m86) {};          &
+		\node[dspnodeopen, dsp/label=above](m87) {$x[0]\z^{-3M}$};  &
+        \node[dspadder]                    (m88) {};          &
+		\node[coordinate]                  (m89) {};          &
+        \node[coordinate]                  (m8X) {};          \\
+		%--------------------------------------------------------------------
+        \node[coordinate]                  (m90) {};          &
+		\node[coordinate]                  (m91) {};          &
+		\node[dspmixer, dsp/label=right]   (m92) {-23};    &
+		\node[coordinate]                  (m93) {};          &
+		\node[dspmixer, dsp/label=right]   (m94) {-949};    &
+		\node[coordinate]                  (m95) {};          &
+		\node[dspmixer, dsp/label=right]   (m96) {10342};    &
+		\node[coordinate]                  (m97) {};          &
+		\node[dspmixer, dsp/label=right]   (m98) {526};    &
+		\node[coordinate]                  (m99) {};          &
+		\node[coordinate]                  (m9X) {};          \\
+		%--------------------------------------------------------------------
+		\node[coordinate]                  (mX0) {};          &
+		\node[coordinate]                  (mX1) {};          &
+		\node[coordinate]                  (mX2) {};          &
+		\node[dspsquare]                   (mX3) {$\z^{-M}$}; &
+		\node[dspadder]                    (mX4) {};          &
+		\node[dspsquare]                   (mX5) {$\z^{-M}$}; &
+		\node[dspadder]                    (mX6) {};          &
+		\node[dspsquare]                   (mX7) {$\z^{-M}$}; &
+		\node[dspadder]                    (mX8) {};          &
+		\node[coordinate]                  (mX9) {};          &
+		\node[coordinate]                  (mXX) {};          \\
 	};
 
 	% Draw connections
@@ -188,13 +247,25 @@ in all channels, the overall beamforming is not affected.
         \chainin (m30);
         \chainin (m32) [join=by dspflow];
     \end{scope}
-	\begin{scope}[start chain]
+    \begin{scope}[start chain]
+        \chainin (m80);
+        \chainin (m82) [join=by dspflow];
+    \end{scope}        
+    \begin{scope}[start chain]
 		\chainin (m00);
 		\chainin (m02) [join=by dspflow];
         \chainin (m42) [join=by dspline];
         \chainin (m32) [join=by dspflow];
         \chainin (m12) [join=by dspconn];
 		\chainin (m22) [join=by dspline];
+	\end{scope}
+	\begin{scope}[start chain]
+		\chainin (m60);
+		\chainin (m62) [join=by dspflow];
+        \chainin (m72) [join=by dspline];
+        \chainin (m82) [join=by dspflow];
+        \chainin (m92) [join=by dspconn];
+		\chainin (mX2) [join=by dspline];
 	\end{scope}
 
 	\foreach \i [evaluate = \i as \j using int(\i+1),
@@ -204,6 +275,10 @@ in all channels, the overall beamforming is not affected.
             \chainin (m3\j);
             \chainin (m3\k) [join=by dspflow];
         \end{scope}
+        \begin{scope}[start chain]
+            \chainin (m8\j);
+            \chainin (m8\k) [join=by dspflow];
+        \end{scope}
 		\begin{scope}[start chain]
 			\chainin (m0\i);
 			\chainin (m0\j) [join=by dspconn];
@@ -212,14 +287,37 @@ in all channels, the overall beamforming is not affected.
 			\chainin (m1\k) [join=by dspconn];
 			\chainin (m2\k) [join=by dspconn];
 		\end{scope}
+		\begin{scope}[start chain]
+			\chainin (m6\i);
+			\chainin (m6\j) [join=by dspconn];
+			\chainin (m6\k) [join=by dspline];
+			% \chainin (m7\k) [join=by dspconn];
+			\chainin (m8\k) [join=by dspconn];
+			\chainin (m9\k) [join=by dspconn];
+            \chainin (mX\k) [join=by dspconn];
+		\end{scope}
         \begin{scope}[start chain]
             \chainin (m2\i);
             \chainin (m2\j) [join=by dspconn];
             \chainin (m2\k) [join=by dspconn];
         \end{scope}            
+        \begin{scope}[start chain]
+            \chainin (mX\i);
+            \chainin (mX\j) [join=by dspconn];
+            \chainin (mX\k) [join=by dspconn];
+        \end{scope}
+        \begin{scope}[start chain]
+            \chainin (mX8);
+            \chainin (mX9) [join=by dspline];
+            \chainin (m29) [join=by dspconn];
+        \end{scope}
 	}
 
-	\draw[dspflow] (m28) -- (m2X);
+    \begin{scope}[start chain]
+        \chainin (m28);
+        \chainin (m29) [join=by dspflow];
+        \chainin (m2X) [join=by dspflow];        
+    \end{scope}
 \end{tikzpicture}
 \end{center}
 \end{figure}
@@ -246,7 +344,7 @@ The transfer function of the matched filter at a sample rate of
 $1500~\text{MSa}/\text{s}$ is given by
 
 \begin{align*}
-H\left(z\right) = \frac{1}{32} & (-1+z^{-3}-z^{-5}+z^{-7}+z^{-8} \\
+H\left(z\right) = \frac{1}{2^{5}} & (-1+z^{-3}-z^{-5}+z^{-7}+z^{-8} \\
                   & -z^{-9}-z^{-10}+z^{-11}+z^{-12}-z^{-13}   \\
                   & -2z^{-14}+2z^{-15}-4z^{-17}+4z^{-18}-2z^{-19}+z^{-20}) \\
 \end{align*}
