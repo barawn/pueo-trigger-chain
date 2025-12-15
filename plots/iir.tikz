@@ -1,0 +1,243 @@
+\begin{tikzpicture}
+	% Place nodes using a matrix
+	\matrix (m1) [row sep=2.5mm, column sep=5mm]
+	{
+		\node[coordinate]                  (mN0) {};          &
+		\node[coordinate]                  (mN1) {};          &
+		\node[coordinate]                  (mN2) {};          &
+		\node[coordinate]                  (mN3) {};          &
+		\node[coordinate]                  (mN4) {};          &
+		\node[coordinate]                  (mN5) {};          &
+		\node[coordinate]                  (mN6) {};          &
+		\node[coordinate]                  (mN7) {};          &
+		\node[coordinate]                  (mN8) {};          &
+		\node[coordinate]                  (mN9) {};          &
+		\node[coordinate]                  (mNX) {};          \\
+		%--------------------------------------------------------------------
+		\node[coordinate]                  (m00) {};          &
+		\node[coordinate]                  (m01) {};          &
+		\node[dspnodefull]                 (m02) {};          &
+		\node[coordinate]                  (m03) {};          &
+		\node[dspmixer]                    (m04) {$C_{0}$};          &
+		\node[dspsquare]                   (m05) {$\z^{-M}$}; &
+		\node[dspadder]                    (m06) {};          &
+		\node[coordinate]                  (m07) {};          &
+		\node[coordinate]                  (m08) {};          &
+		\node[coordinate]                  (m09) {};          &
+		\node[coordinate]                  (m0X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m10) {};          &
+		\node[coordinate]                  (m11) {};          &
+		\node[coordinate]                  (m12) {};          &
+		\node[coordinate]                  (m13) {};          &
+		\node[coordinate]                  (m14) {};          &
+		\node[coordinate]                  (m15) {};          &
+		\node[coordinate]                  (m16) {};          &
+		\node[coordinate]                  (m17) {};          &
+		\node[coordinate]                  (m18) {};          &
+		\node[coordinate]                  (m19) {};          &
+		\node[coordinate]                  (m1X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m20) {};          &
+		\node[coordinate]                  (m21) {};          &
+		\node[coordinate]                  (m22) {};          &
+		\node[coordinate]                  (m23) {};          &
+		\node[dspnodeopen, dsp/label=above](m24) {$F\left[n\right]$};  &
+		\node[dspsquare]                   (m25) {$\z^{-M}$};  &
+		\node[coordinate]                  (m26) {};          &
+		\node[coordinate]                  (m27) {};          &
+        \node[coordinate]                  (m28) {};          &
+		\node[coordinate]                  (m29) {};          &
+        \node[coordinate]                  (m2X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m30) {};          &
+		\node[coordinate]                  (m31) {};          &
+		\node[coordinate]                  (m32) {};          &
+		\node[coordinate]                  (m33) {};          &
+		\node[coordinate]                  (m34) {};          &
+		\node[coordinate]                  (m35) {};          &
+		\node[coordinate]                  (m36) {};          &
+		\node[coordinate]                  (m37) {};          &
+		\node[coordinate]                  (m38) {};          &
+		\node[coordinate]                  (m39) {};          &
+		\node[coordinate]                  (m3X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m40) {};          &
+		\node[coordinate]                  (m41) {};          &
+		\node[dspsquare]                   (m42) {$\z^{-M}$};  &
+		\node[coordinate]                  (m43) {};          &
+		\node[dspmixer]                    (m44) {$C_{1}$};          &
+		\node[coordinate]                  (m45) {};          &
+		\node[dspadder]                    (m46) {};          &
+		\node[coordinate]                  (m47) {};          &
+        \node[dspsquare]                   (m48) {$\z^{-M}$}; &
+		\node[coordinate]                  (m49) {};          &
+        \node[dspnodeopen, dsp/label=above](m4X) {$y\left[0\right]$};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m50) {};          &
+		\node[coordinate]                  (m51) {};          &
+		\node[coordinate]                  (m52) {};          &
+		\node[coordinate]                  (m53) {};          &
+		\node[coordinate]                  (m54) {};          &
+		\node[coordinate]                  (m55) {};          &
+		\node[coordinate]                  (m56) {};          &
+		\node[coordinate]                  (m57) {};          &
+		\node[coordinate]                  (m58) {};          &
+		\node[coordinate]                  (m59) {};          &
+		\node[coordinate]                  (m5X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (mZ0) {};          &
+		\node[coordinate]                  (mZ1) {};          &
+		\node[coordinate]                  (mZ2) {};          &
+		\node[coordinate]                  (mZ3) {};          &
+		\node[coordinate]                  (mZ4) {};          &
+		\node[coordinate]                  (mZ5) {};          &
+		\node[coordinate]                  (mZ6) {};          &
+		\node[coordinate]                  (mZ7) {};          &
+		\node[coordinate]                  (mZ8) {};          &
+		\node[coordinate]                  (mZ9) {};          &
+		\node[coordinate]                  (mZX) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m61) {};          &
+		\node[coordinate]                  (m62) {};          &
+		\node[coordinate]                  (m63) {};          &
+		\node[coordinate]                  (m60) {};          &
+		\node[dspnodeopen, dsp/label=above](m64) {$G\left[n\right]$};  &
+		\node[dspsquare]                   (m65) {$\z^{-M}$};  &
+		\node[coordinate]                  (m66) {};          &
+		\node[coordinate]                  (m67) {};          &
+        \node[coordinate]                  (m68) {};          &
+		\node[coordinate]                  (m69) {};          &
+        \node[coordinate]                  (m6X) {};          \\
+		%--------------------------------------------------------------------
+		\node[coordinate]                  (m90) {};          &
+		\node[coordinate]                  (m91) {};          &
+		\node[dspnodefull]                 (m92) {};          &
+		\node[coordinate]                  (m93) {};          &
+		\node[dspmixer]                    (m94) {$C_{3}$};          &
+		\node[dspsquare]                   (m95) {$\z^{-M}$}; &
+		\node[dspadder]                    (m96) {};          &
+		\node[coordinate]                  (m97) {};          &
+		\node[coordinate]                  (m98) {};          &
+		\node[coordinate]                  (m99) {};          &
+		\node[coordinate]                  (m9X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m70) {};          &
+		\node[coordinate]                  (m71) {};          &
+		\node[coordinate]                  (m72) {};          &
+		\node[coordinate]                  (m73) {};          &
+		\node[coordinate]                  (m74) {};          &
+		\node[coordinate]                  (m75) {};          &
+		\node[coordinate]                  (m76) {};          &
+		\node[coordinate]                  (m77) {};          &
+		\node[coordinate]                  (m78) {};          &
+		\node[coordinate]                  (m79) {};          &
+		\node[coordinate]                  (m7X) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (m80) {};          &
+		\node[coordinate]                  (m81) {};          &
+		\node[dspsquare]                   (m82) {$\z^{-M}$};  &
+		\node[coordinate]                  (m83) {};          &
+		\node[dspmixer]                    (m84) {$C_{2}$};          &
+		\node[coordinate]                  (m85) {};          &
+		\node[dspadder]                    (m86) {};          &
+		\node[coordinate]                  (m87) {};                  &
+        \node[dspsquare]                   (m88) {$\z^{-M}$}; &
+		\node[coordinate]                  (m89) {};          &
+        \node[dspnodeopen, dsp/label=above] (m8X) {$y\left[1\right]$};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (mX0) {};          &
+		\node[coordinate]                  (mX1) {};          &
+		\node[coordinate]                  (mX2) {};          &
+		\node[coordinate]                  (mX3) {};          &
+		\node[coordinate]                  (mX4) {};          &
+		\node[coordinate]                  (mX5) {};          &
+		\node[coordinate]                  (mX6) {};          &
+		\node[coordinate]                  (mX7) {};          &
+		\node[coordinate]                  (mX8) {};          &
+		\node[coordinate]                  (mX9) {};          &
+		\node[coordinate]                  (mXX) {};          \\
+        %--------------------------------------------------------------------
+		\node[coordinate]                  (mY0) {};          &
+		\node[coordinate]                  (mY1) {};          &
+		\node[coordinate]                  (mY2) {};          &
+		\node[coordinate]                  (mY3) {};          &
+		\node[coordinate]                  (mY4) {};          &
+		\node[coordinate]                  (mY5) {};          &
+		\node[coordinate]                  (mY6) {};          &
+		\node[coordinate]                  (mY7) {};          &
+		\node[coordinate]                  (mY8) {};          &
+		\node[coordinate]                  (mY9) {};          &
+		\node[coordinate]                  (mYX) {};          \\           
+    };
+    \begin{scope}[start chain]
+        \chainin (m01);
+        \chainin (m02) [join=by dspflow];
+        \chainin (m04) [join=by dspconn];
+        \chainin (m05) [join=by dspconn];
+        \chainin (m06) [join=by dspconn];
+        \chainin (m07) [join=by dspline];
+        \chainin (m37) [join=by dspline];
+        \chainin (m36) [join=by dspline];
+        \chainin (m46) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m46);
+        \chainin (m48) [join=by dspconn];
+        \chainin (mN8) [join=by dspline];
+        \chainin (mN1) [join=by dspline];
+        \chainin (m01) [join=by dspline];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m24);
+        \chainin (m25) [join=by dspconn];
+        \chainin (m26) [join=by dspline];
+        \chainin (m06) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m64);
+        \chainin (m65) [join=by dspconn];
+        \chainin (m66) [join=by dspline];
+        \chainin (m96) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m88);
+        \chainin (mX8) [join=by dspline];
+        \chainin (mX0) [join=by dspline];
+        \chainin (m40) [join=by dspline];
+        \chainin (m42) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m48);
+        \chainin (m58) [join=by dspline];
+        \chainin (m51) [join=by dspline];
+        \chainin (m81) [join=by dspflow];
+        \chainin (m82) [join=by dspconn];
+        \chainin (m84) [join=by dspconn];
+        \chainin (m86) [join=by dspconn];
+        \chainin (m88) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m88);
+        \chainin (mZ8) [join=by dspline];
+        \chainin (mZ2) [join=by dspline];
+        \chainin (m92) [join=by dspflow];
+        \chainin (m94) [join=by dspconn];
+        \chainin (m95) [join=by dspconn];
+        \chainin (m96) [join=by dspconn];
+        \chainin (m86) [join=by dspconn];        
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m42);
+        \chainin (m44) [join=by dspconn];
+        \chainin (m46) [join=by dspconn];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m88);
+        \chainin (m8X) [join=by dspline];
+    \end{scope}
+    \begin{scope}[start chain]
+        \chainin (m48);
+        \chainin (m4X) [join=by dspline];
+    \end{scope}
+\end{tikzpicture}
