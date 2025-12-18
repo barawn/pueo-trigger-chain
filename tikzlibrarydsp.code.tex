@@ -276,6 +276,34 @@
 	}
 }
 
+\pgfdeclareshape{dspshapebandstop}{
+
+	\inheritsavedanchors[from={rectangle}]
+	\inheritbackgroundpath[from={rectangle}]
+	\inheritanchorborder[from={rectangle}]
+	\foreach \x in {center, mid, mid west, mid east, base, base west, base east,
+		north, north east, east, south east, south, south west, west, north west}{
+		\inheritanchor[from={rectangle}]{\x}
+	}
+
+	\foregroundpath{
+		\pgfpointdiff{\northeast}{\southwest}
+		\pgf@xa=\pgf@x \pgf@ya=\pgf@y
+		\northeast
+		%coordinate system
+		\pgfpathmoveto{\pgfpoint{0.33\pgf@xa} {-0.33\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{0.33\pgf@xa} {0.33\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{-0.33\pgf@xa} {0.33\pgf@ya}}
+		%lowpass
+        \pgfpathmoveto{\pgfpoint{0.25\pgf@xa} {-0.33\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{0.15\pgf@xa} {-0.33\pgf@ya}}
+        \pgfpathlineto{\pgfpoint{0.1\pgf@xa} {0.2\pgf@ya}}
+        \pgfpathlineto{\pgfpoint{-0.1\pgf@xa} {0.2\pgf@ya}}
+		\pgfpathlineto{\pgfpoint{-0.15\pgf@xa} {-0.33\pgf@ya}}
+        \pgfpathlineto{\pgfpoint{-0.25\pgf@xa} {-0.33\pgf@ya}}
+	}
+}
+
 
 \pgfdeclareshape{dspshapesinewave}{
 
@@ -710,6 +738,15 @@
 	{
 		draw,
 		shape=dspshapebandpass,
+		line width=\dspblocklinewidth,
+		minimum size=\dspsquareblocksize
+	}
+}
+
+\tikzset{dspbandstop/.style=
+	{
+		draw,
+		shape=dspshapebandstop,
 		line width=\dspblocklinewidth,
 		minimum size=\dspsquareblocksize
 	}
