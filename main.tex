@@ -2,13 +2,14 @@
 \usepackage{graphicx} % Required for inserting images
 \usepackage{subcaption}
 \usepackage{amsmath}
+\usepackage{adjustbox}
 \usepackage{tikz}
 \usetikzlibrary{dsp,chains}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
 \newcommand{\z}{\mathpzc{z}}
 \newcommand{\chebyu}[2]{U_{#1}\left(#2\right)}
 \newcommand{\ssrsample}[2]{#1\left[#2\right]}
-\title{PUEO trigger chain paper}
+\title{First stage trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
 \author{P.S.~Allison}
 \date{December 2025}
 
@@ -320,7 +321,7 @@ calculate the $g$ term in $F$ and the $f$ term in $G$.
 
 The IIR section consists of a cascade of 4 DSPs with pipeline
 registers carefully chosen to meet timing, as shown in 
-Fig.~\ref{fig:iirsec}. Each sample consists of 2 DSPs, with the
+Fig.~\ref{fig:biquaddesign}. Each sample consists of 2 DSPs, with the
 output of the second DSP routed back to the input of the first
 with a pipeline register after the multiplier. This feedback 
 is the critical fabric routing path of the IIR section and
@@ -328,21 +329,205 @@ limits this design to a maximum of $\sim425\,\text{MHz}$ with
 the given device. The second DSP takes in the other sample's output
 with the pipeline register at the input to the DSP.
 
-\begin{figure}
-    
-\end{figure}
+Lastly, the incremental computation section consists of $2M-4$
+DSPs arranged in a cascade to both allow serial coefficient
+programming and input sharing between adjacent samples.
 
-\subsubsection{Biquad resource usage}
-
+An example of the frequency response of the CW rejection section
+programmed as a 4th order bandstop is shown in Fig.~\ref{fig:biquaddesign}.
 The DSP resource usage for the biquad breaks down as
 
 \begin{itemize}
-    \item $H_{z}$ - $2M$
-    \item $F$ and $G$ - $2M+3$
-    \item IIR and incremental computation - $2M$
+    \item $H_{z}$ -- $2M$
+    \item $F$ and $G$ -- $2M+3$
+    \item IIR and incremental computation -- $2M$
 \end{itemize}
 
-or $8M+3$ total DSPs. 
+or $6M+3$ total DSPs. 
+
+\begin{figure}
+    \begin{center}
+    \input{plots/iir.tikz}
+    \end{center}
+    \caption{Structure of the IIR section of the programmable
+    biquad. Pipeline registers were carefully chosen to allow
+    the design to meet timing. The critical paths are through
+    the $C_{0}$/$C_{3}$ multiplier.}
+    \label{fig:biquaddesign}
+\end{figure}
+
+The CW rejection section can also be placed into a bypass mode
+where the overall transfer function is switched to $H\left(z\right)=1$
+by swapping the $b_{1}$ coefficient to 1 and forcing the multiplier
+outputs in the DSPs sequentially into reset. The overall trigger
+is blocked during these transition periods to prevent glitching
+issues. These transitions can be commanded globally to allow the
+notches to only apply to specific channels as needed, however this
+functionality was not used due to time pressure with the
+flight software.
+
+During the PUEO flight, parameter values for a range of
+second-order notches and the 4th order bandstop were pre-computed
+into the flight software.
+
+\section{Automatic gain control and bit reduction (AGC-BR) block}
+
+The last block before the beamforming section is the AGC-BR block,
+which normalizes each of the channels based on thermal noise
+statistics and reduces the overall dynamic range to a symmetric
+signed 5-bit representation - that is, values are represented as
+a two's complement $x^{\prime}=x-0.5$, and the constant offsets
+are tracked and corrected for. The scaling of the AGC-BR block
+targets an output RMS of $4$, meaning $1\,\text{LSB}=0.25\sigma$
+with zero mean. The symmetric 5-bit representation means that the
+output now represents values between $\pm3.875\sigma$. Values outside
+this range are clipped to the maximum/minimum values.
+
+In addition to the signed outputs, the AGC-BR block also generates
+the absolute value and $x>2\sigma$ and $x<2\sigma$ (tail fraction)
+indicators. Because of the symmetric representation, both of these
+outputs are trivial, as
+$\text{abs}\left(x\left[4:0\right]\right)=x\left[4\right]\oplus x\left[3:0\right]$,
+$x<2\sigma =x\left[4\right]\cdot \overline{x\left[3\right]}$ and
+$x>2\sigma = \overline{x\left[4\right]} \cdot x\left[3\right]$.
+
+The 4-bit absolute value is mapped to its true square and
+accumulated using a custom-logic adder and the tail fraction
+indicators increment counters over a full AGC-BR measurement period.
+Once the measurement period is complete, a per-channel control loop
+increments or decrements the scaling factor if the square is outside of a
+target range, and increments or decrements an offset based on the
+difference of the tail fraction counters. The simple control loop
+does result in a slight remaining variation of $\sim1\%$ which is
+sufficient given the overall variation in the analog signal path.
+
+\section{Beamforming and trigger}
+
+\subsection{Beamforming and coherent sum}
+
+\subsection{Square and envelope formation}
+
+Once the individual 8-bit samples for each beam are formed,
+a simple envelope is generated by squaring each sample
+and computing an 8-sample sum every 4 samples.
+
+The squarer was based on the signed 8-bit logic given by 
+Wires et al. \cite{wiresoptsquare}, but optimized for the
+fabric of the UltraScale family and their generic 5-input,
+2-output lookup table (LUT).
+
+The squarer adder tree was structured overall as a ternary adder,
+with a 3:2 compressor embedded into the LUT, with one (sum) output
+feeding into the carry chain and the second (carry) output
+routed to the next bit. Additionally, two 4-bit secondary terms
+were computed from the sum of several partial products containing
+only 5 common inputs, which allowed them to be directly computed
+without a carry chain.
+
+Several bits in the ternary adder were left with unused outputs,
+allowing other secondary terms to be generated,
+reducing the total size to a 10-bit ternary adder (10 LUTs) and
+4 additional auxiliary LUTs, fitting in less than 2 UltraScale
+slices. For comparison, a synthesis-generated 8-bit square generated over
+8 slices of logic, a logic reduction of over a factor of 4. The worst
+critical path of the logic consists of 4 levels of logic
+(3 LUT propagation times plus the carry chain), corresponding to
+$\sim0.75\,\text{ns}$ in the device used, significantly less than
+the synthesis-generated design.
+
+\begin{figure}
+$\begin{array}{cccccccccc}
+s_{14} & s_{13} & s_{12} & s_{11} & s_{10} & s_{9} & s_{8} & s_{7} & s_{6} & s_{5}\\
+\hline 
+T_{14} & T_{13} & \overline{a_{7}a_{4}} & T_{11} & \overline{P_{72}} & \overline{a_{7}a_{1}} & \overline{a_{7}a_{0}} & a_{6}a_{0} & a_{5}a_{0} & T_{5} \\
+ &  & c_{3} &  & c_{1} & c_{0} & a_{6}a_{1} & d_{1} & d_{0} & P_{40}\\
+ &  & \overline{a_{7}a_{3}}c_{2} &  & \bar{d}_{3}a_{4} & d_{3} & d_{2}
+\end{array}$
+
+
+\[
+\begin{array}{cccc}
+c_{3} & c_{2} & c_{1} & c_{0}\\
+\hline a_{6}\bar{a}_{5} & a_{6}a_{4} & a_{6}a_{3} & a_{6}a_{2}\\
+ & a_{5}a_{4} & a_{5}\bar{a}_{4} & a_{5}a_{3}\\
+ &  &  & a_{5}a_{2}\left(a_{3}\lor\bar{a}_{4}\right)
+\end{array}
+\]
+
+\[
+\begin{array}{cccc}
+d_{3} & d_{2} & d_{1} & d_{0}\\
+\hline a_{4} & a_{5}a_{2}\oplus\overline{a_{4}\bar{a}_{3}} & a_{5}a_{1} & a_{3}\bar{a}_{2}\\
+ &  & a_{4}a_{2} & a_{4}a_{1}\\
+ &  & a_{3}a_{2} & a_{3}a_{2}a_{1}
+\end{array}
+\]
+
+\begin{align*}
+T_{5} = & a_{3}a_{1}\oplus a_{3}a_{2}a_{0}\oplus a_{2}a_{1} \,(\text{internal logic to bit 5})  \\
+T_{11} = & \overline{a_{7}a_{3}}\oplus c_{2}\,(\text{internal logic to bit 11}) \\
+T_{13} = & \overline{a_{7}a_{5}}\oplus a_{6}a_{5}\,(\text{internal logic to bit 13}) \\
+T_{14} = & \overline{a_{7}\bar{a}_{6}}\oplus\bar{a}_{7}a_{6}a_{5}\,(\text{internal logic to bit 14}) \\
+P_{40} = & a_{4}a_{0}\,(\text{secondary output from bit 7}) \\
+P_{72} = & a_{7}a_{2}\,(\text{secondary output from bit 11}) \\
+b_{4} = & a_{2}\overline{a_{1}} \oplus a_{3}a_{0} \oplus a_{2}a_{1}a_{0}\,
+(\text{secondary output from bit 5}) \\
+b_{3} = & a_{2}a_{1} \oplus a_{1}a_{0}\,(\text{secondary output from bit 6}) \\
+b_{2} = & a_{1}\overline{a_{0}}\,(\text{secondary output from bit 14}) \\
+b_{1} = & 0 \\
+b_{0} = & a_{0} \\
+\end{align*}
+
+\caption{Optimized two's complement 8-bit square logic for 5-bit
+input, 2-bit output LUTs. The overall logic consists of a 10-bit ternary
+adder structure and several pre-computed partial products and
+secondary terms. The two 4-bit secondary terms are logically outputs
+of ternary adders, but since the terms are all derived from only 5 inputs
+these are implemented as direct LUTs. The squarer fits into 2
+UltraScale slices, a total of 4 LUTs and a 10-bit adder structure.}
+\end{figure}
+
+After the square of each sample was generated, the final step
+in the envelope trigger was to compute an 8-sample sum every 4 samples,
+which corresponds to 2 samples every system clock. Because the sums
+are thresholded, only the larger of the two matters: therefore,
+we compute the sum of samples 4 to 7,  compare to the previous
+clock cycle, and retain only the larger of the two. This max sum
+is then added to the sum of samples 0 to 3, generating the max of
+$\sum_{i=4}^{7}x\left[i\right]z^{-8}+\sum_{i=0}^{3}x\left[i\right]$
+and $\sum_{i=0}^{7}x\left[i\right]$. This value is then thresholded
+twice - one threshold is used to generate the trigger output of
+that beam, and the second threshold is used as a subtrigger
+monitoring threshold to allow monitoring the beam behavior with
+higher statistics.
+
+\section{Resource usage and performance}
+
+The overall major resource usage breakdown for the trigger system
+is shown in Table~\ref{tab:resource}. In total, with 2 biquads,
+the trigger system uses $\sim12\%$ of the CLBs in the
+device and $\sim26\%$ of the DSPs.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+    & Slices & DSPs \\
+    \hline
+    Total available on device & 53160 & 4272  \\
+    Signal processing chain (excluding biquads) & 2767 & 584  \\
+    Biquad (each, up to 2) & 800 & 200  \\
+    Beamforming trigger (48 total beams) & 2120 & 120  \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{
+\label{tab:resource} Resource usage for the trigger chain.
+Each slice consists of 8 LUTs and 16 registers. The beamforming
+trigger section also consists of resources to monitor the trigger
+rates of each beam for threshold monitoring.
+}
+\end{table}
 
 
 \end{document}
