@@ -1,0 +1,9 @@
+# this is extracted from Lucas's trigger testing
+# compare AGC scale before/after enabling CW rejection
+
+# thermal
+2910,3060,3000,3000,3000,3000
+# no CW rejection
+1650,1740,1680,1590,1590,1620
+# CW rejection
+2970,3090,3090,2940,2940,2940
