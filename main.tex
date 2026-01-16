@@ -9,7 +9,7 @@
 \newcommand{\z}{\mathpzc{z}}
 \newcommand{\chebyu}[2]{U_{#1}\left(#2\right)}
 \newcommand{\ssrsample}[2]{#1\left[#2\right]}
-\title{First stage trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
+\title{Trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
 \author{P.S.~Allison}
 \date{December 2025}
 
@@ -18,6 +18,39 @@
 \maketitle
 
 \section{Introduction}
+
+The Payload for Ultrahigh Energy Observations (PUEO) \cite{pueo} is a balloon-borne
+instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV}$.
+It represents a significant improvement in balloon-borne detection of radio
+signals from ultrahigh energy particle cascades, utilizing direct radio-frequency
+(RF) digitization at $3\,\text{GSa/s}$ to coherently sum up to 8 antennas
+in multiple beamformed directions at once. In addition, significant pre-trigger signal
+processing is used to enhance the overall signal-to-noise ratio (SNR) prior to the
+beamform process.
+
+\subsection{Architecture}
+
+The PUEO main instrument consists of 24 Sampling Unit for RF (SURFv6) modules
+with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency 
+System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
+gate array (FPGA) and a quad-core ARM processing system. Each SURF handles
+8 individual RF channels, giving a total of 192 input channels, split between
+horizontal and vertical polarizations. An additional 2 SURFs handle a separate
+low-frequency instrument not described here.
+
+The 8 individual RF channels consist of two ``phi sectors'', an azimuthal slice
+of $15^{\circ}$ containing 4 antennas with the same boresight direction.
+One antenna in each phi sector is located in the top ring, with a baseline
+distance to the highest antenna in the bottom rings of either $3.82~\mathrm{m}$
+or $3.25~\mathrm{m}$, with the remaining three antennas in the bottom ring
+spaced by $0.725~\mathrm{m}$. The antennas themselves are quad-ridged horn
+antennas designed by Toyon, Inc. specifically for PUEO, focusing on the
+$300-1200~\mathrm{MHz}$ frequency range. 
+
+Here, we describe the trigger system implemented within the RFSoC FPGA fabric in
+the SURF as well as the global trigger formed for the entire experiment at the
+Trigger Unit for RF (TURFv6).
+
 \section{Trigger filter chain}
 
 The trigger system for PUEO is fully digital and contains multiple signal 
@@ -309,6 +342,18 @@ balloon flights by the ANITA experiment \ref{tuffpaper}, wide notches
 (effective $Q$ of $5-7$) were used at $260$, $375$, and $460\,\text{MHz}$
 all of which would be in the stable region for this design.
 
+\begin{figure}
+    \begin{center}
+    \includegraphics[width=0.9\textwidth]{plots/notch_phase_space_m_4.png}
+    \end{center}
+    \caption{Stable phase space for a biquad with $M=4$ when used
+    as a simple notch. In the primary PUEO trigger band of 
+    $300-750\,\text{MHz}$ the primary interferers occur in the 
+    $375-500\,\text{MHz}$ where a good region of stability for
+    moderate-width notches as used in similar flights.}
+    \label{fig:stablebiquad}
+\end{figure}
+
 \subsubsection{Biquad implementation}
 
 $H_{z}\left(z\right)$, $f$, and $g$ are all straightforward FIR filters,
@@ -317,7 +362,10 @@ The $f\left[n-1\right]$ and $g\left[n-1\right]$ terms in the definition
 of $F$ and $G$ are calculated in an additional DSP in the cascade with
 the prior DSP's output looped to its input. This term is the critical
 path in the $F$ and $G$ calculation. Finally, an additional pair of DSPs
-calculate the $g$ term in $F$ and the $f$ term in $G$.
+calculate the $g$ term in $F$ and the $f$ term in $G$. In total,
+the $H_z$ calculation takes $2M$ DSPs, the $f$/$g$ calculation takes $M-2$/$M-1$
+DSPs respectively (since the $i=0$ term in $f$/$g$ is just an add),
+and $F$/$G$ take 2 DSPs each.
 
 The IIR section consists of a cascade of 4 DSPs with pipeline
 registers carefully chosen to meet timing, as shown in 
@@ -327,11 +375,19 @@ with a pipeline register after the multiplier. This feedback
 is the critical fabric routing path of the IIR section and
 limits this design to a maximum of $\sim425\,\text{MHz}$ with
 the given device. The second DSP takes in the other sample's output
-with the pipeline register at the input to the DSP.
+with the pipeline register at the input to the DSP. This
+maximum speed is independent of the supersample rate factor $M$ -
+while the PUEO implementation currently uses $M=4$ (so a $1500\,\text{MSa/s}$
+operating frequency) previous versions successfully ran at $M=8$.
 
-Lastly, the incremental computation section consists of $2M-4$
-DSPs arranged in a cascade to both allow serial coefficient
-programming and input sharing between adjacent samples.
+The final incremental computation section calculates $y\left[i\right]$
+for $i=2\ldots M$ using the original difference equation
+$y\left[i\right]=x\left[i\right]-P\cos\theta y\left[i-1\right]-P^{2}y\left[i-2\right]$.
+This consists of $2M-4$ DSPs arranged in a cascade to both allow
+serial coefficient programming and input sharing between adjacent
+samples. The input $x\left[i\right]$ terms needed are propagated through
+the $f$ and $g$ calculation sections to allow delays to be shared
+between the two portions of the calculation.
 
 An example of the frequency response of the CW rejection section
 programmed as a 4th order bandstop is shown in Fig.~\ref{fig:biquaddesign}.
@@ -339,11 +395,11 @@ The DSP resource usage for the biquad breaks down as
 
 \begin{itemize}
     \item $H_{z}$ -- $2M$
-    \item $F$ and $G$ -- $2M+3$
+    \item $F$ and $G$ -- $2M+1$
     \item IIR and incremental computation -- $2M$
 \end{itemize}
 
-or $6M+3$ total DSPs. 
+or $6M+1$ total DSPs (25 for $M=4$). 
 
 \begin{figure}
     \begin{center}
@@ -362,15 +418,29 @@ by swapping the $b_{1}$ coefficient to 1 and forcing the multiplier
 outputs in the DSPs sequentially into reset. The overall trigger
 is blocked during these transition periods to prevent glitching
 issues. These transitions can be commanded globally to allow the
-notches to only apply to specific channels as needed, however this
-functionality was not used due to time pressure with the
-flight software.
+notches to only apply to specific channels as needed.
 
-During the PUEO flight, parameter values for a range of
-second-order notches and the 4th order bandstop were pre-computed
-into the flight software.
+Preflight tests of the CW rejection were performed by viewing
+the scale value from the AGC-BR block (see Sec.~\ref{sec:agc_br}).
+A sine wave at $370~\mathrm{MHz}$ was injected into 6 channels
+at an amplitude of $\sim1.75\times$ the thermal noise RMS. When
+enabled, the AGC-BR scale returned to the scaling without CW present,
+as shown in Fig.~\ref{fig:cw_mitigation_testing}.
 
-\section{Automatic gain control and bit reduction (AGC-BR) block}
+\begin{figure}
+    \begin{center}
+    \includegraphics[width=0.9\textwidth]{plots/cw_rej_testing.png}        
+    \end{center}
+    \caption{\label{fig:cw_mitigation_testing}CW mitigation testing.}
+\end{figure}
+
+Due to thermal issues during the 2025-2026 PUEO flight, only the
+firmware with the excluded CW rejection section was used. The loss
+of this functionality primarily affects the portion of the
+instrument where CW becomes significant compared to thermal
+noise, which tended to be $\sim17\%$.
+
+\section{\label{sec:agc_br}Automatic gain control and bit reduction (AGC-BR) block}
 
 The last block before the beamforming section is the AGC-BR block,
 which normalizes each of the channels based on thermal noise
@@ -405,6 +475,12 @@ sufficient given the overall variation in the analog signal path.
 
 \subsection{Beamforming and coherent sum}
 
+The 8 5-bit samples from each channel were stored in delay elements
+32 samples deep to allow for beamforming. The layout of the
+PUEO antennas encourages beams formed from common \emph{sub-beams}
+from the 3 bottom ring antennas in each phi sector 
+
+
 \subsection{Square and envelope formation}
 
 Once the individual 8-bit samples for each beam are formed,
@@ -429,11 +505,20 @@ allowing other secondary terms to be generated,
 reducing the total size to a 10-bit ternary adder (10 LUTs) and
 4 additional auxiliary LUTs, fitting in less than 2 UltraScale
 slices. For comparison, a synthesis-generated 8-bit square generated over
-8 slices of logic, a logic reduction of over a factor of 4. The worst
-critical path of the logic consists of 4 levels of logic
+8 slices of logic, a logic reduction of over a factor of 4.
+The worst critical path of the logic consists of 4 levels of logic
 (3 LUT propagation times plus the carry chain), corresponding to
 $\sim0.75\,\text{ns}$ in the device used, significantly less than
 the synthesis-generated design.
+
+While other optimized squarers for FPGAs have been presented
+\cite{bottcherresourceoptimal}, these were focused on building
+efficient larger-width squarers, and the detailed size of
+small squarers was not clear. However, they do not appear to
+approach the $\sim75\%$ resource reduction given here.
+Note that the aggressive optimization here is most appropriate
+because of the large number ($3072\,\text{total}$) of squares
+required.
 
 \begin{figure}
 $\begin{array}{cccccccccc}
@@ -470,21 +555,23 @@ T_{13} = & \overline{a_{7}a_{5}}\oplus a_{6}a_{5}\,(\text{internal logic to bit 
 T_{14} = & \overline{a_{7}\bar{a}_{6}}\oplus\bar{a}_{7}a_{6}a_{5}\,(\text{internal logic to bit 14}) \\
 P_{40} = & a_{4}a_{0}\,(\text{secondary output from bit 7}) \\
 P_{72} = & a_{7}a_{2}\,(\text{secondary output from bit 11}) \\
-b_{4} = & a_{2}\overline{a_{1}} \oplus a_{3}a_{0} \oplus a_{2}a_{1}a_{0}\,
+s_{4} = & a_{2}\overline{a_{1}} \oplus a_{3}a_{0} \oplus a_{2}a_{1}a_{0}\,
 (\text{secondary output from bit 5}) \\
-b_{3} = & a_{2}a_{1} \oplus a_{1}a_{0}\,(\text{secondary output from bit 6}) \\
-b_{2} = & a_{1}\overline{a_{0}}\,(\text{secondary output from bit 14}) \\
-b_{1} = & 0 \\
-b_{0} = & a_{0} \\
+s_{3} = & a_{2}a_{1} \oplus a_{1}a_{0}\,(\text{secondary output from bit 6}) \\
+s_{2} = & a_{1}\overline{a_{0}}\,(\text{secondary output from bit 14}) \\
+s_{1} = & 0 \\
+s_{0} = & a_{0} \\
 \end{align*}
 
 \caption{Optimized two's complement 8-bit square logic for 5-bit
-input, 2-bit output LUTs. The overall logic consists of a 10-bit ternary
-adder structure and several pre-computed partial products and
-secondary terms. The two 4-bit secondary terms are logically outputs
-of ternary adders, but since the terms are all derived from only 5 inputs
-these are implemented as direct LUTs. The squarer fits into 2
-UltraScale slices, a total of 4 LUTs and a 10-bit adder structure.}
+input, 2-bit output LUTs, with the inputs represented as $a_{7:0}$
+and the outputs as $s_{14:0}$. The overall logic consists of a 10-bit
+ternary adder structure (consisting of the terms under $s_{14:5}$) and 
+several pre-computed partial products and secondary terms. The two 4-bit
+secondary terms are logically outputs of ternary adders, but since the
+terms are all derived from only 5 inputs these are implemented as
+direct LUTs. The squarer fits into 2 UltraScale slices, a total of
+4 LUTs plus the adder structure.}
 \end{figure}
 
 After the square of each sample was generated, the final step
@@ -500,6 +587,29 @@ twice - one threshold is used to generate the trigger output of
 that beam, and the second threshold is used as a subtrigger
 monitoring threshold to allow monitoring the beam behavior with
 higher statistics.
+
+Thresholding is done with Xilinx DSPs configured in a 2x24-bit SIMD
+configuration, handling 2 beams at a time. The entire beamforming
+section is implemented in a DSP cascade to allow the thresholds to
+be updated using the coefficient cascade feature of the DSPs.
+
+\subsection{L1 Trigger}
+
+The final (L1) trigger provided to the Trigger Unit for RF (TURF)
+global PUEO trigger system is generated from the OR of all 48 individual
+thresholded beams and quantized to a 3-clock (24 total sample)
+interval. The trigger is provided as a 12-bit trigger timestamp
+(corresponding to a $98,304\,\text{sample}=32.768\,\mu \text{s}$
+readout signal buffer for absorbing the trigger formation latency)
+and an 8-bit trigger metadata. The beams are placed into 8 overall
+groups corresponding to their direction. If a beam in one of those
+groups passes the threshold, a bit in the metadata is set. This allows the
+TURF to form higher-level coincidences between different SURFs.
+
+Once a global trigger is formed, the TURF returns a valid readout
+timestamp and a $1024\,\text{sample}$ buffer is read out from the
+signal buffer and transmitted to the TURF and then to the science
+flight computer.
 
 \section{Resource usage and performance}
 
