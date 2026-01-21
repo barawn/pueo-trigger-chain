@@ -24,9 +24,11 @@ instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV
 It represents a significant improvement in balloon-borne detection of radio
 signals from ultrahigh energy particle cascades, utilizing direct radio-frequency
 (RF) digitization at $3\,\text{GSa/s}$ to coherently sum up to 8 antennas
-in multiple beamformed directions at once. In addition, significant pre-trigger signal
-processing is used to enhance the overall signal-to-noise ratio (SNR) prior to the
-beamform process.
+in multiple (48 implemented) beamformed directions at once. In addition,
+significant pre-trigger signal processing is used to enhance the overall
+signal-to-noise ratio (SNR) prior to the beamform process.
+
+Here we cover the design, implementation, and preflight performance of the trigger system for PUEO. Full performance of the trigger during the 2024-2025 flight will be covered elsewhere.
 
 \subsection{Architecture}
 
@@ -77,18 +79,19 @@ a common scale and reduces the total range to 5 bits (32 total values).
 \subsection{Downsample/upsample blocks}
 
 While significant power from the Askaryan signal is observed throughout the
-band, the overall SNR peaks in the lower half. This therefore encourages
-using a low-pass (halfband) filter to reduce the overall bandwidth to below
-$750\,\text{MHz}$, which also allows the remainder of the trigger chain to
-decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$ to reduce
-power. However, before the AGC-BR block, the signal is restored to
-$3000\,\text{MSa/s}$ by zero padding followed by the same halfband filter,
-allowing for finer beamforming delays.
+band, the overall SNR peaks in the lower half due to the antenna's gain
+profile. This therefore encourages using a low-pass (halfband) filter to
+reduce the overall bandwidth to below $750\,\text{MHz}$, which also allows
+the remainder of the trigger chain to decimate by a factor of 2 and operate
+at $1500\,\text{MSa/s}$ to reduce power. However, before the AGC-BR block,
+the signal is restored to $3000\,\text{MSa/s}$ by zero padding followed by
+the same halfband filter, allowing for finer beamforming delays.
 
-The halfband filter is a 31-tap FIR filter operating at a supersample rate
-of 8 with an additional 1 sample delay to align the center tap with the
-original sample (at $z^{-16}$, two overall system clocks). The transfer
+The halfband filter is a 31-tap FIR filter operating at an SSR of 8 with
+an additional 1 sample delay to align the center tap with the original
+sample (at $z^{-16}$, two overall system clocks). The transfer
 function is:
+
 \[
 \resizebox{\hsize}{!}{
 H\left(z\right)=K
@@ -207,7 +210,8 @@ DSP-based design.
 
 \subsection{CW rejection block}
 
-Up to 2 programmable digital biquad filters were implemented
+A small number of relatively narrowband interferers are commonly seen in Antarctica, as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS \cite{MUOS} communication satellites at $\sim 370\,\mathrm{MHz}$ and South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. To mitigate this, up
+to 2 programmable digital biquad filters were implemented
 in the CW rejection block, operating at an SSR factor of 4 $M=4$. 
 These sections implemented the transfer function
 
@@ -431,14 +435,21 @@ as shown in Fig.~\ref{fig:cw_mitigation_testing}.
     \begin{center}
     \includegraphics[width=0.9\textwidth]{plots/cw_rej_testing.png}        
     \end{center}
-    \caption{\label{fig:cw_mitigation_testing}CW mitigation testing.}
+    \caption{\label{fig:cw_mitigation_testing}CW mitigation testing.
+    Injecting a $370~\mathrm{MHz}$ sine wave at $\sim1.75\times$
+    thermal RMS with no mitigation resulted in a $\sim1.8\times$
+    decrease in the AGC-BR scale to compensate. Enabling the CW
+    rejection returned the scaling to its prior value.
+    }
 \end{figure}
 
 Due to thermal issues during the 2025-2026 PUEO flight, only the
 firmware with the excluded CW rejection section was used. The loss
 of this functionality primarily affects the portion of the
 instrument where CW becomes significant compared to thermal
-noise, which tended to be $\sim17\%$.
+noise, which tended to be $\sim17\%$ of the total phi sectors -
+this relatively small amount was due to the atypical flight
+path which generally kept multiple MUOS satellites out of view, as well as South Pole policy changes which kept the LMR radios at a much lower transmit power.
 
 \section{\label{sec:agc_br}Automatic gain control and bit reduction (AGC-BR) block}
 
@@ -478,8 +489,24 @@ sufficient given the overall variation in the analog signal path.
 The 8 5-bit samples from each channel were stored in delay elements
 32 samples deep to allow for beamforming. The layout of the
 PUEO antennas encourages beams formed from common \emph{sub-beams}
-from the 3 bottom ring antennas in each phi sector 
+from the 3 bottom ring antennas in each phi sector (termed the
+``left'' and ``right'' sub-beams), as they have short baselines
+and common time delays for multiple beams. The two antennas in the
+top ring are similarly combined (``top'' sub-beam), and then the
+left, right, and top sub-beams are again delayed and summed to form
+a final collection of 42 total beams. An additional 6 beams are
+also formed using only the left and right sub-beams - without the
+large baseline from the top antennas, these beams are therefore
+significantly wider in zenith angle acceptance and act to cover signals
+outside of the other beams with fewer trials.
 
+Each of the sub-beams as well as the final combination are
+added using ternary adder structures. The unused addend in the
+top antenna adder is used to correct the offset in the symmetric
+signed representation (and in the 6-antenna beams, the unused
+addend in the final ternary adder is used). This coherently
+summed signal now ranges over $\pm124$ for the 8-antenna beams
+and $\pm93$ for the 6-antenna beams.
 
 \subsection{Square and envelope formation}
 
@@ -568,10 +595,10 @@ input, 2-bit output LUTs, with the inputs represented as $a_{7:0}$
 and the outputs as $s_{14:0}$. The overall logic consists of a 10-bit
 ternary adder structure (consisting of the terms under $s_{14:5}$) and 
 several pre-computed partial products and secondary terms. The two 4-bit
-secondary terms are logically outputs of ternary adders, but since the
-terms are all derived from only 5 inputs these are implemented as
-direct LUTs. The squarer fits into 2 UltraScale slices, a total of
-4 LUTs plus the adder structure.}
+secondary terms ($c_{3:0}$ and $d_{3:0}$) are logically outputs of
+ternary adders, but since the terms are all derived from only 5 inputs
+these are implemented as direct LUTs. The squarer fits into 2 UltraScale
+slices, a total of 4 LUTs plus the adder structure.}
 \end{figure}
 
 After the square of each sample was generated, the final step
@@ -599,24 +626,55 @@ The final (L1) trigger provided to the Trigger Unit for RF (TURF)
 global PUEO trigger system is generated from the OR of all 48 individual
 thresholded beams and quantized to a 3-clock (24 total sample)
 interval. The trigger is provided as a 12-bit trigger timestamp
-(corresponding to a $98,304\,\text{sample}=32.768\,\mu \text{s}$
+(corresponding to a $98,304~\text{sample}=32.768\,\mu \text{s}$
 readout signal buffer for absorbing the trigger formation latency)
-and an 8-bit trigger metadata. The beams are placed into 8 overall
-groups corresponding to their direction. If a beam in one of those
-groups passes the threshold, a bit in the metadata is set. This allows the
-TURF to form higher-level coincidences between different SURFs.
+and an 8-bit trigger metadata.
 
-Once a global trigger is formed, the TURF returns a valid readout
-timestamp and a $1024\,\text{sample}$ buffer is read out from the
-signal buffer and transmitted to the TURF and then to the science
-flight computer.
+The 48 total beams are placed into 8 overall groups corresponding 
+to their direction. If a beam in one of those groups passes the
+threshold, a bit in the metadata is set.
 
-\section{Resource usage and performance}
+\subsection{L2 and Global Trigger}
+
+At the TURF, when an L1 trigger is received, the trigger and metadata
+for each SURF at that timestamp is marked valid in a rolling
+$4096~\text{sample}$ buffer. The values from this buffer are read
+out a programmable time latency later, which allows the L1 triggers
+to be received at different times from each SURF.
+
+If 2 bits in adjacent SURF metadata corresponding to the same
+beam group direction are seen, this generates an L2 trigger,
+which physically corresponds to a $30^\circ$ section of the
+payload roughly centered between the adjacent SURFs. Each
+individual L2 trigger could be masked off to eliminate noisy
+directions.
+
+An unmasked L2 trigger then generates a global system trigger.
+The TURF returns the readout timestamp to all SURFs, and a
+$1024~\text{sample}$ buffer is read out from the signal buffer
+and transmitted to the TURF and then to the science flight computer.
+
+The individual beam trigger rates during the 2025-2026 flight
+were $\sim650\,\mathrm{Hz}$ during normal operation, which
+resulted in a typical total L1 rate of $\sim28\,\mathrm{kHz}$ per SURF,
+and an L2 rate per $30^\circ$ section of $\sim4-5~\mathrm{Hz}$
+for a total experiment trigger rate of $\sim 100~\mathrm{Hz}$.
+
+\section{Resource and power usage and performance}
 
 The overall major resource usage breakdown for the trigger system
-is shown in Table~\ref{tab:resource}. In total, with 2 biquads,
-the trigger system uses $\sim12\%$ of the CLBs in the
-device and $\sim26\%$ of the DSPs.
+at the SURFs is shown in Table~\ref{tab:resource}. In total, with 2 biquads,
+the trigger system uses $\sim12\%$ of the CLBs in the device and $\sim26\%$
+of the DSPs. Note that the resource usage of the L2 trigger at the TURF is
+negligible.
+
+The SURF firmware was designed to allow the trigger portion of the
+firmware to be activated after initialization, which also allows for
+direct power measurements for the active portion of the trigger. At
+$35^{\circ}~\mathrm{C}$, the trigger system, excluding the biquads,
+used $\sim 5\,\mathrm{W}$ of power, and the biquads additionally
+added $\sim 1\,\mathrm{W}$ each in bypass, and an additional
+$\sim1\,\mathrm{W}$ when active. 
 
 \begin{table}
 \begin{center}
@@ -638,6 +696,7 @@ trigger section also consists of resources to monitor the trigger
 rates of each beam for threshold monitoring.
 }
 \end{table}
+
 
 
 \end{document}
