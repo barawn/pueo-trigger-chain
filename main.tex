@@ -35,7 +35,7 @@ Here we cover the design, implementation, and preflight performance of the trigg
 The PUEO main instrument consists of 24 Sampling Unit for RF (SURFv6) modules
 with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency 
 System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
-gate array (FPGA) and a quad-core ARM processing system. Each SURF handles
+gate array (FPGA) termed the PL and a quad-core ARM processing system termed the PS. Each SURF handles
 8 individual RF channels, giving a total of 192 input channels, split between
 horizontal and vertical polarizations. An additional 2 SURFs handle a separate
 low-frequency instrument not described here.
@@ -49,9 +49,12 @@ spaced by $0.725~\mathrm{m}$. The antennas themselves are quad-ridged horn
 antennas designed by Toyon, Inc. specifically for PUEO, focusing on the
 $300-1200~\mathrm{MHz}$ frequency range. 
 
-Here, we describe the trigger system implemented within the RFSoC FPGA fabric in
-the SURF as well as the global trigger formed for the entire experiment at the
-Trigger Unit for RF (TURFv6).
+The trigger was split into multiple levels,
+with individual beam triggers merged into
+level one (L1) triggers at each SURF, and multiple L1s combined into a level two (L2)
+trigger, which then generates a global
+experiment trigger at the
+Trigger Unit for RF (TURFv6). The L1 implementation is purely in the PL of each SURF, with the PS used only at initialization and powered down in operation for power and thermal purposes. The L2 is located in the programmable logic at the TURF.
 
 \section{Trigger filter chain}
 
