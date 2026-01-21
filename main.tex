@@ -221,7 +221,7 @@ These sections implemented the transfer function
 \[
 \label{eq:iirtransfer}
 H\left(z\right) = \frac{b_0+b_1z^{-1}+b_0z^{-2}}
-{1+P\cos\theta z^{-1}+P^{2}z^{-2}}
+{1-2P\cos\theta z^{-1}+P^{2}z^{-2}}
 \]
 
 which represents a filter with two complementary poles and zeroes.
@@ -234,7 +234,7 @@ In a supersample rate design, the poles of a biquad are challenging
 because of the inherent feedback. We split up Eq.~\ref{eq:iirtransfer}
 into a zero-only section $H_z\left(z\right)=b_0+b_1z^{-1}+b_0z^{-2}$
 and a pole-only section 
-$H_p\left(z\right)^{-1}=1+P\cos\theta z^{-1}+P^{2}z^{-2}$.
+$H_p\left(z\right)^{-1}=1-2P\cos\theta z^{-1}+P^{2}z^{-2}$.
 
 The implementation of $H_p\left(z\right)$ uses pipelining along with
 clustered look-ahead and incremental computation \cite{parhiVLSI}.
@@ -246,7 +246,7 @@ denominator. We use the look-back equation from Feinberg
 \[
 \label{eq:clusteredlookback}
 H_p\left(z\right)=\frac{\sum_{i=0}^{N-1} \chebyu{i}{\cos\theta}P^{i}z^{-i}}
-{1-\chebyu{N}{\cos\theta}P^{N}z^{-N}+\chebyu{N-1}{\cos\theta}P^{N+1}z^{-N-1}}
+{1+\chebyu{N}{\cos\theta}P^{N}z^{-N}-\chebyu{N-1}{\cos\theta}P^{N+1}z^{-N-1}}
 \]
 
 where $U_{i}\cos\theta$ is the Chebyshev polynomial of the second kind.
@@ -487,7 +487,18 @@ sufficient given the overall variation in the analog signal path.
 
 \section{Beamforming and trigger}
 
-\subsection{Beamforming and coherent sum}
+The data out of the signal processing chain was then formed into
+48 total virtual antenna beams. These beams were processed to form
+a signal envelope and then thresholded to form the trigger.
+
+The 48 total beams consist of 35 8-channel beams spanning from 
+$\sim0^\circ$ to $\sim-17^\circ$ in zenith and 13 6-channel beams 
+centered at $4^{\circ}$ and $-20^{\circ}$ in zenith, both
+roughly spanning $\pm20^{\circ}$ in azimuth. The 6 channel beams
+utilized only the lower antennas, allowing the less signal-rich
+zenith extremes to be covered with fewer beams.
+
+\subsection{Beamforming coherent sum}
 
 The 8 5-bit samples from each channel were stored in delay elements
 32 samples deep to allow for beamforming. The layout of the
@@ -497,11 +508,9 @@ from the 3 bottom ring antennas in each phi sector (termed the
 and common time delays for multiple beams. The two antennas in the
 top ring are similarly combined (``top'' sub-beam), and then the
 left, right, and top sub-beams are again delayed and summed to form
-a final collection of 42 total beams. An additional 6 beams are
-also formed using only the left and right sub-beams - without the
-large baseline from the top antennas, these beams are therefore
-significantly wider in zenith angle acceptance and act to cover signals
-outside of the other beams with fewer trials.
+the final 8-channel collection of 35 total beams. The 6 channel beams
+(without the large baseline from the top antennas) were formed by
+adding only the left and right sub-beams.
 
 Each of the sub-beams as well as the final combination are
 added using ternary adder structures. The unused addend in the
