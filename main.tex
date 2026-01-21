@@ -28,17 +28,19 @@ in multiple (48 implemented) beamformed directions at once. In addition,
 significant pre-trigger signal processing is used to enhance the overall
 signal-to-noise ratio (SNR) prior to the beamform process.
 
-Here we cover the design, implementation, and preflight performance of the trigger system for PUEO. Full performance of the trigger during the 2024-2025 flight will be covered elsewhere.
+Here we cover the design, implementation, and preflight performance of the trigger
+system for PUEO. Full performance of the trigger during the 2024-2025 flight will 
+be covered elsewhere.
 
 \subsection{Architecture}
 
 The PUEO main instrument consists of 24 Sampling Unit for RF (SURFv6) modules
 with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency 
 System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
-gate array (FPGA) termed the PL and a quad-core ARM processing system termed the PS. Each SURF handles
-8 individual RF channels, giving a total of 192 input channels, split between
-horizontal and vertical polarizations. An additional 2 SURFs handle a separate
-low-frequency instrument not described here.
+gate array (FPGA) termed the PL, and a quad-core ARM processing system termed the PS. 
+Each SURF handles 8 individual RF channels, giving a total of 192 input channels, 
+split between horizontal and vertical polarizations. An additional 2 SURFs handle a
+separate low-frequency instrument not described here.
 
 The 8 individual RF channels consist of two ``phi sectors'', an azimuthal slice
 of $15^{\circ}$ containing 4 antennas with the same boresight direction.
@@ -46,15 +48,15 @@ One antenna in each phi sector is located in the top ring, with a baseline
 distance to the highest antenna in the bottom rings of either $3.82~\mathrm{m}$
 or $3.25~\mathrm{m}$, with the remaining three antennas in the bottom ring
 spaced by $0.725~\mathrm{m}$. The antennas themselves are quad-ridged horn
-antennas designed by Toyon, Inc. specifically for PUEO, focusing on the
+antennas designed by Toyon Research Corporation specifically for PUEO, focusing on the
 $300-1200~\mathrm{MHz}$ frequency range. 
 
-The trigger was split into multiple levels,
-with individual beam triggers merged into
+The trigger was split into multiple levels, with individual beam triggers merged into
 level one (L1) triggers at each SURF, and multiple L1s combined into a level two (L2)
-trigger, which are then combined to generate a global
-experiment trigger at the
-Trigger Unit for RF (TURFv6). The L1 implementation is purely in the PL of each SURF, with the PS used only at initialization and powered down in operation for power and thermal purposes. The L2 is located in the programmable logic at the TURF.
+trigger, which are then combined to generate a global experiment trigger at the
+Trigger Unit for RF (TURFv6). The L1 implementation is purely in the PL of each SURF,
+with the PS used only at initialization and powered down in operation for power
+and thermal purposes. The L2 is located in the programmable logic at the TURF.
 
 \section{Trigger filter chain}
 
@@ -452,7 +454,9 @@ of this functionality primarily affects the portion of the
 instrument where CW becomes significant compared to thermal
 noise, which tended to be $\sim17\%$ of the total phi sectors -
 this relatively small amount was due to the atypical flight
-path which generally kept multiple MUOS satellites out of view, as well as South Pole policy changes which kept the LMR radios at a much lower transmit power.
+path which generally kept multiple MUOS satellites out of view, as 
+well as South Pole policy changes which kept the $450\,\mathrm{MHz}$ 
+transmitter at a much lower transmit power.
 
 \section{\label{sec:agc_br}Automatic gain control and bit reduction (AGC-BR) block}
 
