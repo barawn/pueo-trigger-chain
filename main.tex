@@ -47,9 +47,40 @@ of $15^{\circ}$ containing 4 antennas with the same boresight direction.
 One antenna in each phi sector is located in the top ring, with a baseline
 distance to the highest antenna in the bottom rings of either $3.82~\mathrm{m}$
 or $3.25~\mathrm{m}$, with the remaining three antennas in the bottom ring
-spaced by $0.725~\mathrm{m}$. The antennas themselves are quad-ridged horn
-antennas designed by Toyon Research Corporation specifically for PUEO, focusing on the
-$300-1200~\mathrm{MHz}$ frequency range. 
+spaced by $0.725~\mathrm{m}$. 
+
+The antennas themselves are quad-ridged horn antennas designed by Toyon Research
+Corporation specifically for PUEO, focusing on the $300-1200~\mathrm{MHz}$ frequency
+range. The antennas are dual polarization, with the horizontal and vertical
+polarizations both independently recorded and triggered by two separate data
+acquisition crates (shown in Fig.~\ref{fig:mie}). The PUEO instrument is shown in
+Fig.~\ref{fig:payload} indicating the 8 antennas which feed into each SURF.
+The antennas have a very stable off-axis response, allowing for beams to be
+formed between phi sectors without amplitude and phase correction over frequency.
+
+\begin{figure}[h]
+\begin{subfigure}{\textwidth}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{plots/1000022656.jpg}
+\end{center}
+\caption{PUEO payload}
+\label{fig:payload}
+\end{subfigure}
+% FIR filter as block diagram
+\begin{subfigure}{\textwidth}
+\begin{center}
+\includegraphics[width=0.5\textwidth]{plots/IMG_4568.jpg}
+\end{center}
+\caption{Main instrument enclosure}
+\label{fig:mie}
+\end{subfigure}
+\caption{The PUEO payload and main instrument enclosure. The outlined antennas
+indicate the structure of the 8 antennas fed into each SURF, consisting of 2
+4-antenna ''phi sectors`` viewing a $15^{\circ}$ slice of azimuth. Each antenna
+has both horizontal and vertical polarizations, recorded in separate data
+acquisition crates as shown.}
+\label{fig:halfbandFilter}
+\end{figure}
 
 The trigger was split into multiple levels, with individual beam triggers merged into
 level one (L1) triggers at each SURF, and multiple L1s combined into a level two (L2)
