@@ -270,11 +270,11 @@ and a pole-only section
 $H_p\left(z\right)^{-1}=1-2P\cos\theta z^{-1}+P^{2}z^{-2}$.
 
 The implementation of $H_p\left(z\right)$ uses pipelining along with
-clustered look-ahead and incremental computation \cite{parhiVLSI}.
+clustered look-ahead and incremental computation \cite{parhi2007vlsi}.
 This is mathematically equivalent to adding compensating poles to the
 numerator of the transfer function to increase the order of the
 denominator. We use the look-back equation from Feinberg
-\cite{feinbergvectorizing} to rewrite $H_p\left(z\right)$ as
+\cite{feinberg116087} to rewrite $H_p\left(z\right)$ as
 
 \[
 \label{eq:clusteredlookback}
