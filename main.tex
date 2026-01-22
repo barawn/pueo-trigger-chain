@@ -246,10 +246,13 @@ DSP-based design.
 
 \subsection{CW rejection block}
 
-A small number of relatively narrowband interferers are commonly seen in Antarctica, as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS \cite{MUOS} communication satellites at $\sim 370\,\mathrm{MHz}$ and South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. To mitigate this, up
-to 2 programmable digital biquad filters were implemented
-in the CW rejection block, operating at an SSR factor of 4 $M=4$. 
-These sections implemented the transfer function
+A small number of relatively narrowband interferers are commonly seen in Antarctica, 
+as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS
+\cite{oetting2011mobile} communication satellites at $\sim 370\,\mathrm{MHz}$ and 
+South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. To 
+mitigate this, up to 2 programmable digital biquad filters were implemented in the CW
+rejection block, operating at an SSR factor of 4 $M=4$. These sections implemented 
+the transfer function
 
 \[
 \label{eq:iirtransfer}
