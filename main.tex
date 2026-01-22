@@ -79,7 +79,7 @@ indicate the structure of the 8 antennas fed into each SURF, consisting of 2
 4-antenna ''phi sectors`` viewing a $15^{\circ}$ slice of azimuth. Each antenna
 has both horizontal and vertical polarizations, recorded in separate data
 acquisition crates as shown.}
-\label{fig:halfbandFilter}
+\label{fig:payloadandmie}
 \end{figure}
 
 The trigger was split into multiple levels, with individual beam triggers merged into
@@ -492,18 +492,20 @@ path which generally kept multiple MUOS satellites out of view, as
 well as South Pole policy changes which kept the $450\,\mathrm{MHz}$ 
 transmitter at a much lower transmit power.
 
-\section{\label{sec:agc_br}Automatic gain control and bit reduction (AGC-BR) block}
+\section{\label{sec:agc_br}Automatic gain control and bit reduction block (AGC-BR)}
 
 The last block before the beamforming section is the AGC-BR block,
 which normalizes each of the channels based on thermal noise
 statistics and reduces the overall dynamic range to a symmetric
 signed 5-bit representation - that is, values are represented as
-a two's complement $x^{\prime}=x-0.5$, and the constant offsets
-are tracked and corrected for. The scaling of the AGC-BR block
-targets an output RMS of $4$, meaning $1\,\text{LSB}=0.25\sigma$
-with zero mean. The symmetric 5-bit representation means that the
-output now represents values between $\pm3.875\sigma$. Values outside
-this range are clipped to the maximum/minimum values.
+a two's complement $x^{\prime}=x-0.5$. The scaling of the AGC-BR 
+block targets an output RMS of $4$, meaning $1\,\text{LSB}=0.25\sigma$ 
+with zero mean - as an example, 0 represents all values from
+$0\dots0.25\sigma$ (on average $0.125\sigma$) and -1 represents all 
+values from $-0.25\dots0\sigma$ (on average $-0.125\sigma$). 
+The symmetric 5-bit representation means that the output now represents
+values between $\pm3.875\sigma$. Values outside this range are clipped 
+to the maximum/minimum values.
 
 In addition to the signed outputs, the AGC-BR block also generates
 the absolute value and $x>2\sigma$ and $x<2\sigma$ (tail fraction)
@@ -580,22 +582,23 @@ without a carry chain.
 Several bits in the ternary adder were left with unused outputs,
 allowing other secondary terms to be generated,
 reducing the total size to a 10-bit ternary adder (10 LUTs) and
-4 additional auxiliary LUTs, fitting in less than 2 UltraScale
-slices. For comparison, a synthesis-generated 8-bit square generated over
-8 slices of logic, a logic reduction of over a factor of 4.
-The worst critical path of the logic consists of 4 levels of logic
-(3 LUT propagation times plus the carry chain), corresponding to
-$\sim0.75\,\text{ns}$ in the device used, significantly less than
-the synthesis-generated design.
+4 additional auxiliary LUTs (14 LUT6s total), fitting in less 
+than 2 UltraScale slices. For comparison, a synthesis-generated 
+8-bit square generated over 8 slices of logic ($>64\,\mathrm{LUT6}$),
+a logic reduction of over a factor of 4. The worst critical path 
+of the logic consists of 4 levels of logic (3 LUT propagation 
+times plus the carry chain), corresponding to $\sim0.75\,\text{ns}$
+in the device used, significantly less than the synthesis-generated design.
 
 While other optimized squarers for FPGAs have been presented
-\cite{bottcherresourceoptimal}, these were focused on building
+\cite{bottcher2022resource}, these were focused on building
 efficient larger-width squarers, and the detailed size of
 small squarers was not clear. However, they do not appear to
 approach the $\sim75\%$ resource reduction given here.
 Note that the aggressive optimization here is most appropriate
-because of the large number ($3072\,\text{total}$) of squares
-required.
+because of the large number of squares ($384~\mathrm{total}$)
+required - the optimized square reduced the slice count of the
+beamforming trigger by $56\%$ alone.
 
 \begin{figure}
 $\begin{array}{cccccccccc}
