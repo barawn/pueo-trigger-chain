@@ -592,18 +592,16 @@ in the device used, significantly less than the synthesis-generated
 design.
 
 This overall method is similar to that described by Bui et al.
-\cite{bui2014additional} except for signed cases, but the 
-partial-product terms chosen to combine were optimized to ensure
-that no more than 4 inputs were used at any stage of the ternary 
-adder requiring the propagated carry, ensuring that the partial
-product calculations could be fully internal to the adder LUTs.
-While other optimized squarers for FPGAs have been presented 
-\cite{bottcher2022resource}, these were focused on building 
-efficient larger-width squarers or for direct ASIC implementation,
-and the detailed size of small squarers was not clear. The aggressive
-optimization here is most appropriate because of the large number of
-squares ($384~\mathrm{total}$) required - the optimized square reduced 
-the slice count of the beamforming trigger by $56\%$ alone.
+\cite{bui2014additional} except for signed cases, but optimized
+to ensure as much logic could be integrated into the adder LUTs
+as possible by abandoning generality. While other optimized
+squarers for FPGAs have been presented \cite{bottcher2022resource},
+these were focused on building efficient larger-width squarers 
+or for direct ASIC implementation, and the detailed size of small 
+squarers was not clear. The aggressive optimization here is most
+appropriate because of the large number of squares ($384~\mathrm{total}$) 
+required - the optimized square reduced the slice count of the
+beamforming trigger by $56\%$ alone.
 
 \begin{figure}
 $\begin{array}{cccccccccc}
@@ -655,8 +653,8 @@ ternary adder structure (consisting of the terms under $s_{14:5}$) and
 several pre-computed partial products and secondary terms. The two 4-bit
 secondary terms ($c_{3:0}$ and $d_{3:0}$) are logically outputs of
 ternary adders, but since the terms are all derived from only 5 inputs
-these are implemented as direct LUTs. The squarer fits into 2 UltraScale
-slices, a total of 4 LUTs plus the adder structure.}
+these are implemented as direct LUTs. Note that $\lor$ indicates a logical
+OR operation and $\oplus$ indicates a logical XOR.}
 \end{figure}
 
 After the square of each sample was generated, the final step
