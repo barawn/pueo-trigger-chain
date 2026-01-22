@@ -588,17 +588,22 @@ than 2 UltraScale slices. For comparison, a synthesis-generated
 a logic reduction of over a factor of 4. The worst critical path 
 of the logic consists of 4 levels of logic (3 LUT propagation 
 times plus the carry chain), corresponding to $\sim0.75\,\text{ns}$
-in the device used, significantly less than the synthesis-generated design.
+in the device used, significantly less than the synthesis-generated
+design.
 
-While other optimized squarers for FPGAs have been presented
-\cite{bottcher2022resource}, these were focused on building
-efficient larger-width squarers, and the detailed size of
-small squarers was not clear. However, they do not appear to
-approach the $\sim75\%$ resource reduction given here.
-Note that the aggressive optimization here is most appropriate
-because of the large number of squares ($384~\mathrm{total}$)
-required - the optimized square reduced the slice count of the
-beamforming trigger by $56\%$ alone.
+This overall method is similar to that described by Bui et al.
+\cite{bui2014additional} except for signed cases, but the 
+partial-product terms chosen to combine were optimized to ensure
+that no more than 4 inputs were used at any stage of the ternary 
+adder requiring the propagated carry, ensuring that the partial
+product calculations could be fully internal to the adder LUTs.
+While other optimized squarers for FPGAs have been presented 
+\cite{bottcher2022resource}, these were focused on building 
+efficient larger-width squarers or for direct ASIC implementation,
+and the detailed size of small squarers was not clear. The aggressive
+optimization here is most appropriate because of the large number of
+squares ($384~\mathrm{total}$) required - the optimized square reduced 
+the slice count of the beamforming trigger by $56\%$ alone.
 
 \begin{figure}
 $\begin{array}{cccccccccc}
