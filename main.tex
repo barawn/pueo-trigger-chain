@@ -129,17 +129,17 @@ an additional 1 sample delay to align the center tap with the original
 sample (at $z^{-16}$, two overall system clocks). The transfer
 function is:
 
+
 \[
-\resizebox{\hsize}{!}{
-H\left(z\right)=K
-\left(
-\begin{array}{cccccccc}
- & -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
- & -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
-+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
- & +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
-\end{array}
-\right)
+\resizebox{\hsize}{!}{%
+	$H(z)=K
+	\begin{pmatrix}
+		& -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
+		& -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
+		+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
+		& +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
+	\end{pmatrix}
+	$%
 }
 \]
 
