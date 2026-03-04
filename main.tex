@@ -130,16 +130,15 @@ sample (at $z^{-16}$, two overall system clocks). The transfer
 function is:
 
 \[
-\resizebox{\hsize}{!}{
-H\left(z\right)=K
-\left(
-\begin{array}{cccccccc}
- & -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
- & -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
-+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
- & +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
-\end{array}
-\right)
+\resizebox{\hsize}{!}{%
+	$H(z)=K
+	\begin{pmatrix}
+		& -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
+		& -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
+		+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
+		& +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
+	\end{pmatrix}
+	$%
 }
 \]
 
@@ -216,8 +215,8 @@ and the simplified impulse response in both the time and frequency
 domain in shown in Fig.~\ref{fig:matchedimpulse}. The reduced response is
 then decimated by a factor of 2 to match the $1500~\text{MSa}/\text{s}$
 sample rate in the intermediate part of the processing chain,
-time-reversed to create a matched filter, and then scaled by the nearest
-power of 2 to a unity gain. The remaining gain variation is unimportant
+time-reversed to create a matched filter, and then scaled down by $2^{5}$
+for a gain closer to unity. The remaining gain variation is unimportant
 as it is absorbed in the AGC-BR block.
 
 \begin{figure}
@@ -535,7 +534,7 @@ a signal envelope and then thresholded to form the trigger.
 The 48 total beams consist of 35 8-channel beams spanning from 
 $\sim0^\circ$ to $\sim-17^\circ$ in zenith and 13 6-channel beams 
 centered at $4^{\circ}$ and $-20^{\circ}$ in zenith, both
-roughly spanning $\pm20^{\circ}$ in azimuth. The 6 channel beams
+roughly spanning $\pm30^{\circ}$ in azimuth. The 6 channel beams
 utilized only the lower antennas, allowing the less signal-rich
 zenith extremes to be covered with fewer beams.
 
