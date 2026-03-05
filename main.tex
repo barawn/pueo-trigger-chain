@@ -115,14 +115,16 @@ a common scale and reduces the total range to 5 bits (32 total values).
 
 \subsection{Downsample/upsample blocks}
 
-While significant power from the Askaryan signal is observed throughout the
-band, the overall SNR peaks in the lower half due to the antenna's gain
-profile. This therefore encourages using a low-pass (halfband) filter to
-reduce the overall bandwidth to below $750\,\text{MHz}$, which also allows
-the remainder of the trigger chain to decimate by a factor of 2 and operate
-at $1500\,\text{MSa/s}$ to reduce power. However, before the AGC-BR block,
-the signal is restored to $3000\,\text{MSa/s}$ by zero padding followed by
-the same halfband filter, allowing for finer beamforming delays.
+While significant power from the Askaryan signal can be observed throughout the
+band, the overall SNR peaks in the lower half for the majority of signals.
+This is due to a combination of the off-axis gain profile of the antennas
+as well as the Askaryan signal frequency spectrum. We therefore use a 
+low-pass (halfband) filter to reduce the overall bandwidth to below
+$750\,\text{MHz}$, which also allows the remainder of the trigger chain 
+to decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$ to 
+reduce power. However, before the AGC-BR block, the signal is restored
+to $3000\,\text{MSa/s}$ by zero padding followed by the same halfband 
+filter, allowing for finer beamforming delays.
 
 The halfband filter is a 31-tap FIR filter operating at an SSR of 8 with
 an additional 1 sample delay to align the center tap with the original
