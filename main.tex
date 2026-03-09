@@ -25,7 +25,7 @@ instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV
 It represents a significant improvement in balloon-borne detection of radio
 signals from ultrahigh energy particle cascades via the Askaryan effect, 
 utilizing direct radio-frequency (RF) digitization at $3\,\text{GSa/s}$
-to coherently sum up to 8 antennas in multiple (48 implemented) beamformed
+to coherently sum the signals from up to 8 antennas in multiple (48 implemented) beamformed
 directions at once. In addition, significant pre-trigger signal processing is
 used to enhance the overall signal-to-noise ratio (SNR) prior to the beamform process.
 
@@ -40,20 +40,20 @@ with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency
 System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
 gate array (FPGA) termed the PL, and a quad-core ARM processing system termed the PS. 
 Each SURF handles 8 individual RF channels, giving a total of 192 input channels, 
-split between horizontal and vertical polarizations. An additional 2 SURFs handle a
+split between horizontal and vertical polarizations. An additional two SURFs handle a
 separate low-frequency instrument not described here.
 
-The 8 individual RF channels consist of two ``phi sectors'', an azimuthal slice
-of $15^{\circ}$ containing 4 antennas with the same boresight direction.
+Each SURF's 8 RF channels consist of two ``phi sectors'', an azimuthal slice
+of $15^{\circ}$ containing four antennas sharing the same boresight direction.
 One antenna in each phi sector is located in the top ring, with a baseline
 distance to the highest antenna in the bottom rings of either $3.82~\mathrm{m}$
 or $3.25~\mathrm{m}$, with the remaining three antennas in the bottom ring
 spaced by $0.725~\mathrm{m}$. 
 
 The antennas themselves are quad-ridged horn antennas designed by Toyon Research
-Corporation specifically for PUEO, focusing on the $300-1200~\mathrm{MHz}$ frequency
+Corporation specifically for PUEO, sensitive to the $300-1200~\mathrm{MHz}$ frequency
 range. The antennas are dual polarization, with the horizontal and vertical
-polarizations both independently recorded and triggered by two separate data
+polarizations each independently recorded and triggered by two separate data
 acquisition crates (shown in Fig.~\ref{fig:mie}). The PUEO instrument is shown in
 Fig.~\ref{fig:payload} indicating the 8 antennas which feed into each SURF.
 The antennas have a very stable off-axis response, allowing for beams to be
@@ -83,7 +83,7 @@ acquisition crates as shown.}
 \label{fig:payloadandmie}
 \end{figure}
 
-The trigger was split into multiple levels, with individual beam triggers merged into
+The trigger is split into multiple levels, with individual beam triggers merged into
 level one (L1) triggers at each SURF, and multiple L1s combined into a level two (L2)
 trigger, which are then combined to generate a global experiment trigger at the
 Trigger Unit for RF (TURFv6). The L1 implementation is purely in the PL of each SURF,
@@ -93,15 +93,15 @@ and thermal purposes. The L2 is located in the programmable logic at the TURF.
 \section{Trigger filter chain}
 
 The trigger system for PUEO is fully digital and contains multiple signal 
-processing blocks to maximize the detection capability of the instrument,
-as shown in Fig.~\ref{triggerfilterchain}. The filter chain consists of
-a downsampling block, a matched filter, a CW rejection block, followed by an
+processing blocks to maximize the the instrument's detection capability,
+as shown in Fig.~\ref{triggerfilterchain}. The filter chain consists of (in order)
+a downsampling block, a matched filter, a CW rejection block, an
 upsampling block, and finally an automatic gain control and bit reduction
 (AGC-BR) block before entering the digital beamformer. The CW rejection
 portion of the filter chain consists of up to 2 programmable digital biquad
-filters, with builds with 0, 1, and 2 biquads if needed for power reasons,
+filters. Due to power management needs, builds containing 0, 1, or 2 biquads are
 selectable during normal operation. Both the upsampling and downsampling
-block are based on the same 31-tap finite impulse response halfband filter.
+blocks are based on the same 31-tap finite impulse response halfband filter.
 
 The downsampling, upsampling, and AGC-BR blocks operate at 
 $3000\,\text{MSa/s}$ with a supersample rate (SSR) factor of 8 ($M=8$).
@@ -117,12 +117,12 @@ a common scale and reduces the total range to 5 bits (32 total values).
 
 While significant power from the Askaryan signal can be observed throughout the
 band, the overall SNR peaks in the lower half for the majority of signals.
-This is due to a combination of the off-axis gain profile of the antennas
+This is due to both the off-axis gain profile of the antennas
 as well as the Askaryan signal frequency spectrum. We therefore use a 
 low-pass (halfband) filter to reduce the overall bandwidth to below
 $750\,\text{MHz}$, which also allows the remainder of the trigger chain 
-to decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$ to 
-reduce power. However, before the AGC-BR block, the signal is restored
+to decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$,
+reducing power consumption. However, before the AGC-BR block, the signal is restored
 to $3000\,\text{MSa/s}$ by zero padding followed by the same halfband 
 filter, allowing for finer beamforming delays.
 
@@ -136,10 +136,10 @@ function is:
 \resizebox{\hsize}{!}{%
 	$H(z)=K
 	\begin{pmatrix}
-		& -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
-		& -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
-		+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
-		& +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
+		0 & -23z^{-1} & 0 & +105z^{-3} & 0 & -263z^{-5} & 0 & +526z^{-7}\\
+		0 & -949z^{-9} & 0 & +1672z^{-11} & 0 & -3216z^{-13} & 0 & +10342z^{-15}\\
+		+2^{14}z^{-16} & +10342z^{-17} & 0 & -3216z^{-19} & 0 & +1672z^{-21} & 0 & -949z^{-23}\\
+		0 & +526z^{-25} & 0 & -263z^{-27} & 0 & +105z^{-29} & 0 & -23z^{-31} \\
 	\end{pmatrix}
 	$%
 }
@@ -151,9 +151,9 @@ two. The symmetric nature of the filter lends itself to being
 organized as the sum of two 4-tap systolic filters on individual samples,
 with the preadd feature of the FPGA DSP block used to combine the samples
 with common coefficients but reversed order, as shown in
-Fig.~\ref{fig:halfbandStructure}, represented in supersample rate, where
-$x[i]=z^{i}$ and system clocks generate a delay of $z^{-M}$ where
-$M=8$.
+Fig.~\ref{fig:halfbandStructure}. The notation $x[i]=x z^{-i}$ has been chosen 
+to represent calculations in supersample rate; note that system clocks 
+generate a delay of $z^{-M}$, where $M=8$.
 
 As an example, ignoring pipeline registers, for one of the filters for
 $y[7]$, the first DSP takes in $x[4]$ and preadds $x[2]z^{-3M}$. This
