@@ -151,7 +151,7 @@ two. The symmetric nature of the filter lends itself to being
 organized as the sum of two 4-tap systolic filters on individual samples,
 with the preadd feature of the FPGA DSP block used to combine the samples
 with common coefficients but reversed order, as shown in
-Fig.~\ref{fig:halfbandStructure}. The notation $x[i]=x z^{-i}$ has been chosen 
+Fig.~\ref{fig:halfbandStructure}. The notation $x[i]=x z^{i}$ has been chosen 
 to represent calculations in supersample rate; note that system clocks 
 generate a delay of $z^{-M}$, where $M=8$.
 
