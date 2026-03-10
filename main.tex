@@ -156,11 +156,11 @@ to represent calculations in supersample rate; note that system clocks
 generate a delay of $z^{-M}$, where $M=8$.
 
 As an example, ignoring pipeline registers, for one of the filters for
-$y[7]$, the first DSP takes in $x[4]$ and preadds $x[2]z^{-3M}$. This
-generates the $105\left(z^{-3}+z^{-29}\right)$ for $z^{7}$. The
+$y[7]$ (so $yz^7$), the first DSP takes in $x[4]$ and preadds $x[2]z^{-3M}$. This
+generates $105\left(z^{4}+z^{-22}\right)$, or $105z^7\left(z^{-3}+z^{-29}\right)$. The
 next DSP receives $x[4]z^{-2M}$ in cascade input and the same $x[2]z^{-3M}$
-generating the $1672\left(z^{-11}+z^{-21}\right)z^{-8}$ term for $z^{7}$,
-which is added to the delayed output of the first DSP.
+generating the $1672\left(z^{-11}+z^{-21}\right)z^{-8}$ term,
+which is added to the delayed ($z^{-8}$) output of the first DSP.
 This same structure is used for the $x[6]$ and $x[0]$ terms, and the
 outputs of those two chains are added together separately. Running the
 two separate filters in parallel rather than serially requires an
@@ -253,7 +253,7 @@ A small number of relatively narrowband interferers are commonly seen in Antarct
 as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS
 \cite{oetting2011mobile} communication satellites at $\sim 370\,\mathrm{MHz}$ and 
 South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. To 
-mitigate this, up to 2 programmable digital biquad filters were implemented in the CW
+mitigate this, up to 2 programmable digital biquad filters are implemented in the CW
 rejection block, operating at an SSR factor of 4 $M=4$. These sections implemented 
 the transfer function
 
@@ -292,8 +292,8 @@ where $U_{i}\cos\theta$ is the Chebyshev polynomial of the second kind.
 Eq.~\ref{eq:clusteredlookback} requires two samples to compute the
 updated values, separated by 1 sample. We therefore choose samples 0
 and 1, requiring $N=M-1$ for sample 0, and $N=M$ for sample 1. The
-implementation for PUEO used $M=4$, however the filter itself was
-parameterized for any $M$ and originally tested with $M=8$ in a
+implementation for PUEO uses $M=4$, however the filter itself is
+parameterized for any $M$ and was  originally tested with $M=8$ in a
 $3000\,\text{MSa/s}$ implementation.
 
 We separate off the numerator of \ref{eq:clusteredlookback},
@@ -410,7 +410,7 @@ the prior DSP's output looped to its input. This term is the critical
 path in the $F$ and $G$ calculation. Finally, an additional pair of DSPs
 calculate the $g$ term in $F$ and the $f$ term in $G$. In total,
 the $H_z$ calculation takes $2M$ DSPs, the $f$/$g$ calculation takes $M-2$/$M-1$
-DSPs respectively (since the $i=0$ term in $f$/$g$ is just an add),
+DSPs respectively (since the $i=0$ term in $f$/$g$ is a simple addition),
 and $F$/$G$ take 2 DSPs each.
 
 The IIR section consists of a cascade of 4 DSPs with pipeline
@@ -511,11 +511,11 @@ values between $\pm3.875\sigma$. Values outside this range are clipped
 to the maximum/minimum values.
 
 In addition to the signed outputs, the AGC-BR block also generates
-the absolute value and $x>2\sigma$ and $x<2\sigma$ (tail fraction)
+the absolute value and $x>2\sigma$ and $x<-2\sigma$ (tail fraction)
 indicators. Because of the symmetric representation, both of these
 outputs are trivial, as
 $\text{abs}\left(x\left[4:0\right]\right)=x\left[4\right]\oplus x\left[3:0\right]$,
-$x<2\sigma =x\left[4\right]\cdot \overline{x\left[3\right]}$ and
+$x<-2\sigma =x\left[4\right]\cdot \overline{x\left[3\right]}$ and
 $x>2\sigma = \overline{x\left[4\right]} \cdot x\left[3\right]$.
 
 The 4-bit absolute value is mapped to its true square and
@@ -525,25 +525,25 @@ Once the measurement period is complete, a per-channel control loop
 increments or decrements the scaling factor if the square is outside of a
 target range, and increments or decrements an offset based on the
 difference of the tail fraction counters. The simple control loop
-does result in a slight remaining variation of $\sim1\%$ which is
+does result in a slight remaining variation of $\sim1\%$, which is
 sufficient given the overall variation in the analog signal path.
 
 \section{Beamforming and trigger}
 
-The data out of the signal processing chain was then formed into
-48 total virtual antenna beams. These beams were processed to form
-a signal envelope and then thresholded to form the trigger.
+The data out of the signal processing chain is then formed into
+48 total virtual antenna beams. These beams are then processed to form
+a signal envelope which is then thresholded to form the trigger.
 
 The 48 total beams consist of 35 8-channel beams spanning from 
 $\sim0^\circ$ to $\sim-17^\circ$ in zenith and 13 6-channel beams 
-centered at $4^{\circ}$ and $-20^{\circ}$ in zenith, both
+centered at $4^{\circ}$ and $-20^{\circ}$ in zenith, both groups
 roughly spanning $\pm30^{\circ}$ in azimuth. The 6 channel beams
-utilized only the lower antennas, allowing the less signal-rich
+utilize only the lower antennas, allowing the less signal-rich
 zenith extremes to be covered with fewer beams.
 
 \subsection{Beamforming coherent sum}
 
-The 8 5-bit samples from each channel were stored in delay elements
+The 5-bit samples from each of the 8 channels are stored in delay elements
 32 samples deep to allow for beamforming. The layout of the
 PUEO antennas encourages beams formed from common \emph{sub-beams}
 from the 3 bottom ring antennas in each phi sector (termed the
@@ -571,12 +571,12 @@ Once the individual 8-bit samples for each beam are formed,
 a simple envelope is generated by squaring each sample
 and computing an 8-sample sum every 4 samples.
 
-The squarer was based on the signed 8-bit logic given by 
+The squarer is based on the signed 8-bit logic given by 
 Wires et al. \cite{wires831900}, but optimized for the
 fabric of the UltraScale family and their generic 5-input,
 2-output lookup table (LUT).
 
-The squarer adder tree was structured overall as a ternary adder,
+The squarer adder tree is structured overall as a ternary adder,
 with a 3:2 compressor embedded into the LUT, with one (sum) output
 feeding into the carry chain and the second (carry) output
 routed to the next bit. Additionally, two 4-bit secondary terms
@@ -673,7 +673,7 @@ $\sum_{i=4}^{7}x\left[i\right]z^{-8}+\sum_{i=0}^{3}x\left[i\right]$
 and $\sum_{i=0}^{7}x\left[i\right]$. This value is then thresholded
 twice - one threshold is used to generate the trigger output of
 that beam, and the second threshold is used as a subtrigger
-monitoring threshold to allow monitoring the beam behavior with
+monitoring threshold to allow observation of the beam behavior with
 higher statistics.
 
 Thresholding is done with Xilinx DSPs configured in a 2x24-bit SIMD
@@ -693,7 +693,7 @@ and an 8-bit trigger metadata.
 
 The 48 total beams are placed into 8 overall groups corresponding 
 to their direction. If a beam in one of those groups passes the
-threshold, a bit in the metadata is set.
+threshold, its bit in the metadata is set.
 
 \subsection{L2 and Global Trigger}
 
@@ -729,9 +729,9 @@ the trigger system uses $\sim12\%$ of the CLBs in the device and $\sim26\%$
 of the DSPs. Note that the resource usage of the L2 trigger at the TURF is
 negligible.
 
-The SURF firmware was designed to allow the trigger portion of the
-firmware to be activated after initialization, which also allows for
-direct power measurements for the active portion of the trigger. At
+The SURF firmware was designed to allow the trigger portion to be activated 
+after initialization, which enables a direct power measurement of 
+the active portion of the trigger. At
 $35^{\circ}~\mathrm{C}$, the trigger system, excluding the biquads,
 used $\sim 5\,\mathrm{W}$ of power, and the biquads additionally
 added $\sim 1\,\mathrm{W}$ each in bypass, and an additional
