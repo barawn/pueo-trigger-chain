@@ -4,6 +4,8 @@
 \usepackage{amsmath}
 \usepackage{adjustbox}
 \usepackage{tikz}
+\usepackage{xfrac}
+\usepackage[inkscapelatex=false]{svg}
 \usetikzlibrary{dsp,chains}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
 \newcommand{\z}{\mathpzc{z}}
@@ -11,8 +13,8 @@
 \newcommand{\ssrsample}[2]{#1\left[#2\right]}
 
 \title{Trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
-\author{P.S.~Allison}
-\date{December 2025}
+\author{P.S.~Allison, L.W.~Beaufore}
+\date{March 2026}
 
 \begin{document}
 
@@ -102,6 +104,15 @@ portion of the filter chain consists of up to 2 programmable digital biquad
 filters. Due to power management needs, builds containing 0, 1, or 2 biquads are
 selectable during normal operation. Both the upsampling and downsampling
 blocks are based on the same 31-tap finite impulse response halfband filter.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\linewidth]{plots/signal_flow.drawio.pdf}    
+\end{center}
+\caption{Block diagram of the trigger signal processing chain.}
+\label{fig:triggerfilterchain}
+\end{figure}
+
 
 The downsampling, upsampling, and AGC-BR blocks operate at 
 $3000\,\text{MSa/s}$ with a supersample rate (SSR) factor of 8 ($M=8$).
@@ -682,27 +693,6 @@ configuration, handling 2 beams at a time. The entire beamforming
 section is implemented in a DSP cascade to allow the thresholds to
 be updated using the coefficient cascade feature of the DSPs.
 
-\begin{table}
-\begin{center}
-\begin{tabular}{ |c|c|c| } 
- \hline
-    & Slices & DSPs \\
-    \hline
-    Total available on device & 53160 & 4272  \\
-    Signal processing chain (excluding biquads) & 2767 & 584  \\
-    Biquad (each, up to 2) & 800 & 200  \\
-    Beamforming trigger (48 total beams) & 2120 & 120  \\
- \hline
-\end{tabular}
-\end{center}
-\caption{
-\label{tab:resource} Resource usage for the trigger chain.
-Each slice consists of 8 LUTs and 16 registers. The beamforming
-trigger section also consists of resources to monitor the trigger
-rates of each beam for threshold monitoring.
-}
-\end{table}
-
 \subsection{L1 Trigger}
 
 The final (L1) trigger provided to the Trigger Unit for RF (TURF)
@@ -746,6 +736,29 @@ for a total experiment trigger rate of $\sim 100~\mathrm{Hz}$.
 
 \section{Performance}
 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+    & Slices & DSPs \\
+    \hline
+    Total available on device & 53160 & 4272  \\
+    Signal processing chain (excluding biquads) & 2767 & 584  \\
+    Biquad (each, up to 2) & 800 & 200  \\
+    Beamforming trigger (48 total beams) & 2120 & 120  \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{
+\label{tab:resource} Resource usage for the trigger chain.
+Each slice consists of 8 LUTs and 16 registers. The beamforming
+trigger section also consists of resources to monitor the trigger
+rates of each beam for threshold monitoring.
+}
+\end{table}
+
+
 \subsection{Resource and Power Usage}
 The overall major resource usage breakdown for the trigger system
 at the SURFs is shown in Table~\ref{tab:resource}. In total, with 2 biquads,
@@ -761,14 +774,7 @@ used $\sim 5\,\mathrm{W}$ of power, and the biquads additionally
 added $\sim 1\,\mathrm{W}$ each in bypass, and an additional
 $\sim1\,\mathrm{W}$ when active. 
 
-\begin{figure}
-    \begin{center}
-    \includegraphics[width=0.9\textwidth]{plots/efficiency_errFit.png}        
-    \end{center}
-    \caption{\label{fig:efficiency_beamformer} PUEO Trigger efficiency.
-    Lorem Ipsum
-    }
-\end{figure}
+
 
 \subsection{Trigger Efficiency}
 
@@ -779,9 +785,18 @@ This calibration instrument, termed the ``RF box'', can produce up to 16 such si
 relative delays between channels that match the arrival times of a plane wave incident on 
 PUEO's antennas from a given direction. The RF box includes variable attenuators that can be 
 used to scale the signal amplitude. The RF box is attached in place of the antennas 
-for two adjacent SURFs, feeding signals into PUEO's full RF chain and into the DAQ. The 
-RF box is set to simulate a signal arriving from a direction visible to the beams of both 
-of the SURFs under test. 
+for two adjacent SURFs, feeding signals first into a 30 dB attenuator and then into PUEO's full RF chain 
+and into the DAQ. The RF box is set to simulate a signal arriving from a direction visible to the 
+beams of both of the SURFs under test. 
+
+\begin{figure}
+    \begin{center}
+    \includegraphics[width=0.9\textwidth]{plots/efficiency_errFit.png}        
+    \end{center}
+    \caption{\label{fig:efficiency_beamformer} PUEO trigger efficiency, calculated from data taken in the launch facility
+    hanger using the RF box. Single-Antenna SNR has been scaled by $\frac{3}{4}$ to represent an 8 antenna beam, as described in text.
+    }
+\end{figure}
 
 Measurements of the trigger efficiency were made using this test configuration while on the 
 ground at McMurdo Station's Long Duration Balloon (LDB) launch facility, prior to the instrument flight. 
@@ -794,11 +809,11 @@ arrival directions. Prior to data taking, the flight software threshold control 
 trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled, the servo was 
 disabled and the RF box was set to send signals at 10 Hz.
 
+Various signal sizes were measured in 11 $\sim$2 minute long flight-like data taking runs by changing the programmable attenuation
+of the RF box between runs. The single-antenna SNR for the lowest attenuation, where the signals greatly exceeded the noise level, were calculated using $SNR = \frac{ADC_{max} - ADC_{min}}{2*ADC_{RMS}}$. As the attenuation was increased, the single-antenna SNR was calculated by scaling this initial measurement appropriately. In beamforming, noise adds as $\sqrt{N}$, where $N$ is the number of channels being summed, whereas signals add as $N$. Therefore, since only 6 antennas were instrumented per SURF but all 8 had equivalent noise environments, the equivalent single-antenna SNR for an 8-antenna beam can be calculated from this measurement by scaling the SNR by $\sfrac{\frac{6}{\sqrt{8}}}{\frac{8}{\sqrt{8}}} = \frac{3}{4}$.
 
+Each event in the data had its time past the GPS second calculated, termed its ``subsecond''. When these subseconds are binned, 10 spikes corresponding to the RF box's 10 Hz pulsing rate are clearly visible for the highest signal amplitude case. The subsecond bins in which these spikes occur can be summed to produce the total number of measured triggers during the expected arrival of the calibration signals (plus noise). Relative clock drift between the two systems was found to be negligible for the length of the test, so these timing windows are reused for low-amplitude signals as well. Noise is subtracted from this sum by measuring the number of events gathered in an equal-width bin offset from the expected arrival subsecond times. The efficiency is then calculated by dividing the number of remaining events from the total number of expected events for the length of the run. This result is shown in Fig.~\ref{fig:efficiency_beamformer}.
 
-Talk about 6$\rightarrow$8 antenna scaling
-Talk about SNR calculation
-Talk about windowing
 
 %10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
 
