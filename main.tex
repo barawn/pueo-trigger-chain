@@ -277,7 +277,7 @@ $H_p\left(z\right)^{-1}=1-2P\cos\theta z^{-1}+P^{2}z^{-2}$.
 
 The implementation of $H_p\left(z\right)$ uses pipelining along with
 clustered look-ahead and incremental computation \cite{parhi2007vlsi}.
-This is mathematically equivalent to adding compensating poles to the
+This is mathematically equivalent to adding compensating zeros to the
 numerator of the transfer function to increase the order of the
 denominator. We use the look-back equation from Feinberg
 \cite{feinberg116087} to rewrite $H_p\left(z\right)$ as
@@ -548,19 +548,20 @@ The 5-bit samples from each of the 8 channels are stored in delay elements
 PUEO antennas encourages beams formed from common \emph{sub-beams}
 from the 3 bottom ring antennas in each phi sector (termed the
 ``left'' and ``right'' sub-beams), as they have short baselines
-and common time delays for multiple beams. The two antennas in the
+and thus common time delays between multiple beams, due to the 
+quantization of time steps. The two antennas in the
 top ring are similarly combined (``top'' sub-beam), and then the
-left, right, and top sub-beams are again delayed and summed to form
-the final 8-channel collection of 35 total beams. The 6 channel beams
-(without the large baseline from the top antennas) were formed by
-adding only the left and right sub-beams.
+left, right, and top sub-beams are delayed relative to each other
+and summed to form the final 8-channel collection of 35 total beams.
+The 6 channel beams (without the large baseline from the top antennas)
+were formed by adding only the left and right sub-beams.
 
-Each of the sub-beams as well as the final combination are
-added using ternary adder structures, since no frequency-dependent
-amplitude or phase correction per antenna is needed due to the stable
-beam characteristics of the quad-ridged horn. The unused addend in the
-top antenna adder is used to correct the offset in the symmetric
-signed representation (and in the 6-antenna beams, the unused
+Each of the sub-beams as well as their final combination into full
+beams are added using ternary adder structures, since no frequency
+-dependent amplitude or phase correction per antenna is needed due to
+the stable beam characteristics of the quad-ridged horn. The unused
+addend in the top antenna adder is used to correct the offset in the
+symmetric signed representation (and in the 6-antenna beams, the unused
 addend in the final ternary adder is used). This coherently
 summed signal now ranges over $\pm124$ ($\pm31\sigma$) for the 
 8-antenna beams and $\pm93$ ($\pm23.25\sigma$) for the 6-antenna beams.
@@ -681,6 +682,27 @@ configuration, handling 2 beams at a time. The entire beamforming
 section is implemented in a DSP cascade to allow the thresholds to
 be updated using the coefficient cascade feature of the DSPs.
 
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+    & Slices & DSPs \\
+    \hline
+    Total available on device & 53160 & 4272  \\
+    Signal processing chain (excluding biquads) & 2767 & 584  \\
+    Biquad (each, up to 2) & 800 & 200  \\
+    Beamforming trigger (48 total beams) & 2120 & 120  \\
+ \hline
+\end{tabular}
+\end{center}
+\caption{
+\label{tab:resource} Resource usage for the trigger chain.
+Each slice consists of 8 LUTs and 16 registers. The beamforming
+trigger section also consists of resources to monitor the trigger
+rates of each beam for threshold monitoring.
+}
+\end{table}
+
 \subsection{L1 Trigger}
 
 The final (L1) trigger provided to the Trigger Unit for RF (TURF)
@@ -706,7 +728,7 @@ to be received at different times from each SURF.
 If 2 bits in adjacent SURF metadata corresponding to the same
 beam group direction are seen, this generates an L2 trigger,
 which physically corresponds to a signal in a $30^\circ$ section of the
-payload roughly centered between the adjacent SURFs. Each
+payload roughly centered between the adjacent SURF antenna groups. Each
 individual L2 trigger could be masked off to eliminate noisy
 directions.
 
@@ -721,8 +743,10 @@ resulted in a typical total L1 rate of $\sim28\,\mathrm{kHz}$ per SURF,
 and an L2 rate per $30^\circ$ section of $\sim4-5~\mathrm{Hz}$
 for a total experiment trigger rate of $\sim 100~\mathrm{Hz}$.
 
-\section{Resource and power usage and performance}
 
+\section{Performance}
+
+\subsection{Resource and Power Usage}
 The overall major resource usage breakdown for the trigger system
 at the SURFs is shown in Table~\ref{tab:resource}. In total, with 2 biquads,
 the trigger system uses $\sim12\%$ of the CLBs in the device and $\sim26\%$
@@ -737,26 +761,48 @@ used $\sim 5\,\mathrm{W}$ of power, and the biquads additionally
 added $\sim 1\,\mathrm{W}$ each in bypass, and an additional
 $\sim1\,\mathrm{W}$ when active. 
 
-\begin{table}
-\begin{center}
-\begin{tabular}{ |c|c|c| } 
- \hline
-    & Slices & DSPs \\
-    \hline
-    Total available on device & 53160 & 4272  \\
-    Signal processing chain (excluding biquads) & 2767 & 584  \\
-    Biquad (each, up to 2) & 800 & 200  \\
-    Beamforming trigger (48 total beams) & 2120 & 120  \\
- \hline
-\end{tabular}
-\end{center}
-\caption{
-\label{tab:resource} Resource usage for the trigger chain.
-Each slice consists of 8 LUTs and 16 registers. The beamforming
-trigger section also consists of resources to monitor the trigger
-rates of each beam for threshold monitoring.
-}
-\end{table}
+\begin{figure}
+    \begin{center}
+    \includegraphics[width=0.9\textwidth]{plots/efficiency_errFit.png}        
+    \end{center}
+    \caption{\label{fig:efficiency_beamformer} PUEO Trigger efficiency.
+    Lorem Ipsum
+    }
+\end{figure}
+
+\subsection{Trigger Efficiency}
+
+
+PEUO's trigger behavior can be tested in full operation using simulated Askaryan RF signals, 
+produced using a custom calibration instrument built around a Xilinx ZCU216 RFSoC evaluation board (ZCU216). 
+This calibration instrument, termed the ``RF box'', can produce up to 16 such signals with 
+relative delays between channels that match the arrival times of a plane wave incident on 
+PUEO's antennas from a given direction. The RF box includes variable attenuators that can be 
+used to scale the signal amplitude. The RF box is attached in place of the antennas 
+for two adjacent SURFs, feeding signals into PUEO's full RF chain and into the DAQ. The 
+RF box is set to simulate a signal arriving from a direction visible to the beams of both 
+of the SURFs under test. 
+
+Measurements of the trigger efficiency were made using this test configuration while on the 
+ground at McMurdo Station's Long Duration Balloon (LDB) launch facility, prior to the instrument flight. 
+Due to space constraints in the launch facility hangar only the 12 lower-ring antenna paths were attached to the RF box,
+the top-ring front-end amplifiers were terminated, providing a similar noise environment without the
+simulated signal. The signal direction was chosen to be arriving from $-15^{\circ}$ in elevation and $-5^{\circ}$ in azimuth, 
+relative to the midline between the four instrumented phi sectors. Due to time constraints, this was the only 
+rigorously measured direction during this test, but was chosen to be representative of coverage in the most likely
+arrival directions. Prior to data taking, the flight software threshold control servo was allowed to adjust the 
+trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled, the servo was 
+disabled and the RF box was set to send signals at 10 Hz.
+
+
+
+Talk about 6$\rightarrow$8 antenna scaling
+Talk about SNR calculation
+Talk about windowing
+
+%10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
+
+
 
 \bibliographystyle{plain}
 \bibliography{refs}
