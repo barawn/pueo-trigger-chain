@@ -1,10 +1,12 @@
-\documentclass{article}
+\documentclass{IEEEtran}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{subcaption}
-\usepackage{amsmath}
+\usepackage{amsmath,amssymb,amsfonts}
 \usepackage{adjustbox}
 \usepackage{tikz}
 \usepackage{xfrac}
+\usepackage{textcomp,nicefrac}
+\usepackage[switch]{lineno}
 \usepackage[inkscapelatex=false]{svg}
 \usetikzlibrary{dsp,chains}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
@@ -19,6 +21,7 @@
 \begin{document}
 
 \maketitle
+\linenumbers
 
 \section{Introduction}
 
@@ -35,12 +38,13 @@ Here we cover the design, implementation, and preflight performance of the trigg
 system for PUEO. Full performance of the trigger during the 2025-2026 flight will 
 be covered elsewhere.
 
-\subsection{Architecture}
+\subsection{Instrument overview}
 
 The PUEO main instrument consists of 24 Sampling Unit for RF (SURFv6) modules
 with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency 
 System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
-gate array (FPGA) termed the PL, and a quad-core ARM processing system termed the PS. 
+gate array (FPGA) termed the PL, a quad-core ARM processing system termed the PS,
+and an 8-channel high-speed ADC configured to operate at $3000~\textrm{MSa/s}$.
 Each SURF handles 8 individual RF channels, giving a total of 192 input channels, 
 split between horizontal and vertical polarizations. An additional two SURFs handle a
 separate low-frequency instrument not described here.
@@ -62,15 +66,15 @@ The antennas have a very stable off-axis response, allowing for beams to be
 formed between phi sectors without amplitude and phase correction over frequency.
 
 \begin{figure}
-\begin{subfigure}{\textwidth}
+\begin{subfigure}{\linewidth}
 \begin{center}
-\includegraphics[width=0.5\textwidth]{plots/1000022656.jpg}
+\includegraphics[width=0.5\linewidth]{plots/1000022656.jpg}
 \end{center}
 \caption{PUEO payload}
 \label{fig:payload}
 \end{subfigure}
 % FIR filter as block diagram
-\begin{subfigure}{\textwidth}
+\begin{subfigure}{\linewidth}
 \begin{center}
 \includegraphics[width=0.5\textwidth]{plots/IMG_4568.jpg}
 \end{center}
@@ -85,6 +89,8 @@ acquisition crates as shown.}
 \label{fig:payloadandmie}
 \end{figure}
 
+\subsection{Architecture}
+
 The trigger is split into multiple levels, with individual beam triggers merged into
 level one (L1) triggers at each SURF, and multiple L1s combined into a level two (L2)
 trigger, which are then combined to generate a global experiment trigger at the
@@ -92,24 +98,42 @@ Trigger Unit for RF (TURFv6). The L1 implementation is purely in the PL of each 
 with the PS used only at initialization and powered down in operation for power
 and thermal purposes. The L2 is located in the programmable logic at the TURF.
 
-\section{Trigger filter chain}
+Inside the SURF, data from the RFSoC is immediately stored unaltered into a large ring
+buffer (synchronized between all SURFs) corresponding to $32.768~\mu \textrm{s}$ 
+($98304~\textrm{samples}$), which allows for a large trigger latency. The trigger
+itself is transmitted as a $12~\textrm{bit}$ time along with additional metadata, 
+which is then translated into a readout address in the buffer. This results in a
+trigger time quantization of $24~\textrm{samples}$. The position of the trigger in
+the $1024~\textrm{sample}$ readout window is programmable and was tuned to place
+the trigger approximately at $300~\textrm{samples}$ ($100~\textrm{ns}$).
 
 The trigger system for PUEO is fully digital and contains multiple signal 
-processing blocks to maximize the the instrument's detection capability,
-as shown in Fig.~\ref{triggerfilterchain}. The filter chain consists of (in order)
-a downsampling block, a matched filter, a CW rejection block, an
-upsampling block, and finally an automatic gain control and bit reduction
-(AGC-BR) block before entering the digital beamformer. The CW rejection
-portion of the filter chain consists of up to 2 programmable digital biquad
-filters. Due to power management needs, builds containing 0, 1, or 2 biquads are
-selectable during normal operation. Both the upsampling and downsampling
-blocks are based on the same 31-tap finite impulse response halfband filter.
+processing blocks prior to beamforming to maximize the the instrument's
+detection capability, as shown in Fig.~\ref{fig:triggerfilterchain}.
+Logically, these can be considered broken up into a filter chain
+(to modify the signal response to maximize signal to noise and elimiate
+CW), an automatic gain control and bit reduction (AGC-BR) block to reduce
+beamforming resources, and finally the beamforming itself. 
+
+\section{Trigger filter chain}
+
+The filter chain consists of (in order) a downsampling block, a matched filter,
+an optional CW rejection block, and finally an upsampling block before the
+AGC-BR, The CW rejection portion of the filter chain consists of up to 2
+programmable digital biquad filters. Due to power management needs, builds
+containing 0, 1, or 2 biquads are selectable during normal operation. Both
+the upsampling and downsampling blocks are based on the same 31-tap finite
+impulse response halfband filter.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.9\linewidth]{plots/signal_flow.drawio.pdf}    
+\includesvg[width=0.9\linewidth]{plots/trigger_chain.svg}    
 \end{center}
-\caption{Block diagram of the trigger signal processing chain.}
+\caption{Block diagram of the trigger signal processing chain.
+The optional biquad block and the matched filter operate at
+$1.5~\textrm{GSa/s}$ and the AGC-BR block operates at
+$3~\textrm{GSa/s}$.
+}
 \label{fig:triggerfilterchain}
 \end{figure}
 
@@ -160,11 +184,11 @@ where $K=2^{-15}$ for the downsample block and $K=2^{-14}$ for the
 upsample block, resulting in a net unity gain for the combination of the
 two. The symmetric nature of the filter lends itself to being
 organized as the sum of two 4-tap systolic filters on individual samples,
-with the preadd feature of the FPGA DSP block used to combine the samples
-with common coefficients but reversed order, as shown in
-Fig.~\ref{fig:halfbandStructure}. The notation $x[i]=x z^{i}$ has been chosen 
-to represent calculations in supersample rate; note that system clocks 
-generate a delay of $z^{-M}$, where $M=8$.
+with the preadd feature of the FPGA digital signal processor (DSP) block 
+used to combine the samples with common coefficients but reversed order, 
+as shown in Fig.~\ref{fig:halfbandStructure}. The notation $x[i]=x z^{i}$ 
+has been chosen to represent calculations in supersample rate; note that
+system clocks generate a delay of $z^{-M}$, where $M=8$ in this case.
 
 As an example, ignoring pipeline registers, for one of the filters for
 $y[7]$ (so $yz^7$), the first DSP takes in $x[4]$ and preadds $x[2]z^{-3M}$. This
@@ -185,10 +209,11 @@ systolic filters at the appropriate timepoint.
 
 The same configuration is implemented for each of the 8 samples per
 system clock. For the downsample block, since the output is decimated
-afterwards, only the even samples are implemented. For the upsample
-block, since the decimated odd inputs are zero-stuffed prior, only
-the odd samples are implemented and the even samples (which only have
-the center tap) are simply delayed to align to the odd samples.
+afterwards, only the even samples are implemented (as a polyphase
+filter). For the upsample block, since the decimated odd inputs are
+zero-stuffed prior, only the odd samples are implemented and the
+even samples (which only have the center tap) are simply delayed
+to align to the odd samples.
 
 The frequency response of this halfband filter is shown in
 Fig.~\ref{fig:halfbandFreqResp}. The limited rejection near Nyquist
@@ -196,15 +221,20 @@ results in some aliasing after decimation, but because the aliasing is
 equivalent in all channels, the overall beamforming is not affected.
 
 \begin{figure}
-\begin{subfigure}{\textwidth}
-\includegraphics[width=0.9\textwidth]{plots/halfband_filter_resp.png}
+\begin{subfigure}{\linewidth}
+\includegraphics[width=0.9\linewidth]{plots/halfband_filter_resp.png}
 \caption{Frequency response}
 \label{fig:halfbandFreqResp}
 \end{subfigure}
 % FIR filter as block diagram
-\begin{subfigure}{\textwidth}
+% I have no idea which of these
+% linewidth guys is needed, but
+% the resizebox is.
+\begin{subfigure}{0.9\linewidth}
 \begin{center}
+\resizebox{0.9\linewidth}{!}{
 \input{plots/halfband.tikz}
+}
 \end{center}
 \caption{Filter structure}
 \label{fig:halfbandStructure}
@@ -228,26 +258,29 @@ A comparison of the normalized impulse response (post-halfband filter)
 and the simplified impulse response in both the time and frequency
 domain in shown in Fig.~\ref{fig:matchedimpulse}. The reduced response is
 then decimated by a factor of 2 to match the $1500~\text{MSa}/\text{s}$
-sample rate in the intermediate part of the processing chain,
+sample rate (SSR factor $M=4$) in the intermediate part of the processing chain,
 time-reversed to create a matched filter, and then scaled down by $2^{5}$
 for a gain closer to unity. The remaining gain variation is unimportant
 as it is absorbed in the AGC-BR block.
 
 \begin{figure}
-\includegraphics[width=0.9\textwidth]{plots/impulse_resp.png}    
+\begin{center}
+\includegraphics[width=0.9\linewidth]{plots/impulse_resp.png}    
+\end{center}
 \caption{System impulse response and reduced version generated by
 rounding to closest powers of 2 for use in the multiplierless
 matched filter.}
 \label{fig:matchedimpulse}
 \end{figure}
 
-The transfer function of the matched filter at a sample rate of
-$1500~\text{MSa}/\text{s}$ is given by
+The transfer function of the matched filter at the decimated 
+sample rate is given by 
 
 \begin{align*}
 H\left(z\right) = \frac{1}{2^{5}} & (-1+z^{-3}-z^{-5}+z^{-7}+z^{-8} \\
                   & -z^{-9}-z^{-10}+z^{-11}+z^{-12}-z^{-13}   \\
-                  & -2z^{-14}+2z^{-15}-4z^{-17}+4z^{-18}-2z^{-19}+z^{-20}) \\
+                  & -2z^{-14}+2z^{-15}-4z^{-17}+4z^{-18} \\
+                  & -2z^{-19}+z^{-20}) \\
 \end{align*}
 
 The filter is then simplified by pre-computing $P=\left(1-z^{-1}\right)$
@@ -268,23 +301,27 @@ mitigate this, up to 2 programmable digital biquad filters are implemented in th
 rejection block, operating at an SSR factor of 4 $M=4$. These sections implemented 
 the transfer function
 
-\[
+\begin{equation}
 \label{eq:iirtransfer}
 H\left(z\right) = \frac{b_0+b_1z^{-1}+b_0z^{-2}}
-{1-2P\cos\theta z^{-1}+P^{2}z^{-2}}
-\]
+{1-2P\alpha z^{-1}+P^{2}z^{-2}}
+\end{equation}
 
-which represents a filter with two complementary poles and zeroes.
-This structure allows for the creation of two simple notch filters,
-or a single higher-order band rejection filter.
+This transfer function represents a filter with two complementary poles at
+radius $P$ and angle $\theta$ where $\alpha = \cos\theta$ and two
+complementary zeros on the unit circle and an overall gain. This structure
+allows for the creation of two simple notch filters, or a single higher-order
+band rejection filter.
 
 \subsubsection{Biquad design}
 
 In a supersample rate design, the poles of a biquad are challenging
 because of the inherent feedback. We split up Eq.~\ref{eq:iirtransfer}
-into a zero-only section $H_z\left(z\right)=b_0+b_1z^{-1}+b_0z^{-2}$
+into a zero-only section
+$H_z\left(z\right)=b_0+b_1z^{-1}+b_0z^{-2}$ 
 and a pole-only section 
-$H_p\left(z\right)^{-1}=1-2P\cos\theta z^{-1}+P^{2}z^{-2}$.
+$H_p\left(z\right)^{-1}= 1-2P\alpha z^{-1}+P^{2}z^{-2}$. 
+$H_{z}$ is applied first since it acts to reduce the overall dynamic range.
 
 The implementation of $H_p\left(z\right)$ uses pipelining along with
 clustered look-ahead and incremental computation \cite{parhi2007vlsi}.
@@ -293,39 +330,45 @@ numerator of the transfer function to increase the order of the
 denominator. We use the look-back equation from Feinberg
 \cite{feinberg116087} to rewrite $H_p\left(z\right)$ as
 
-\[
+\begin{equation}
 \label{eq:clusteredlookback}
-H_p\left(z\right)=\frac{\sum_{i=0}^{N-1} \chebyu{i}{\cos\theta}P^{i}z^{-i}}
-{1+\chebyu{N}{\cos\theta}P^{N}z^{-N}-\chebyu{N-1}{\cos\theta}P^{N+1}z^{-N-1}}
-\]
+H_{p}\left(z\right)=
+\frac{\sum_{i=0}^{\textrm{N}-1} \chebyu{i}{\alpha}P^{i}z^{-i}}
+{1+\chebyu{\textrm{N}}{\alpha}P^{\textrm{N}}z^{-\textrm{N}}-\chebyu{\textrm{N}-1}{\alpha}P^{\textrm{N}+1}z^{-\textrm{N}-1}}
+\end{equation}
 
-where $U_{i}\cos\theta$ is the Chebyshev polynomial of the second kind.
-Eq.~\ref{eq:clusteredlookback} requires two samples to compute the
-updated values, separated by 1 sample. We therefore choose samples 0
-and 1, requiring $N=M-1$ for sample 0, and $N=M$ for sample 1. The
-implementation for PUEO uses $M=4$, however the filter itself is
-parameterized for any $M$ and was  originally tested with $M=8$ in a
-$3000\,\text{MSa/s}$ implementation.
+Eq.~\ref{eq:clusteredlookback} allows us to represent $H_{p}$ from 
+sequential samples at an increased delay ($z^{-\textrm{N}}$ and
+$z^{-\textrm{N}-1}$ rather than $z^{-1}$ and $z^{-2}$). Here 
+$U_{i}(\alpha)$ is the Chebyshev polynomial of the second kind.
+We choose sample 0 to be calculated with $z^{-(\textrm{M}-1)}$
+and $z^{-M}$ ($N=M-1$) and sample 0 to be calculated with $z^{-M}$
+and $z^{-M-1}$ ($N=M$). The filter instance for PUEO uses $M=4$, however
+the filter implementation itself is parameterized for any $M$ and was
+originally tested with $M=8$ in a $3000\,\text{MSa/s}$ implementation.
 
-We separate off the numerator of \ref{eq:clusteredlookback},
+We separate off the numerator of Eq. \ref{eq:clusteredlookback},
 defining
 
 \begin{align*}
-    f = & \sum_{i=0}^{M-2}\chebyu{i}{\cos\theta}P^{i}z^{-i}    \\
-    g = & \sum_{i=0}^{M-1}\chebyu{i}{\cos\theta}P^{i}z^{-i}
+    f = & \sum_{i=0}^{M-2}\chebyu{i}{\alpha}P^{i}z^{-i}    \\
+    g = & \sum_{i=0}^{M-1}\chebyu{i}{\alpha}P^{i}z^{-i}
 \end{align*}
 
-to obtain a difference equation written in matrix form as
-
+As a difference equation, this is a finite impulse response (FIR) filter,
+applied to the input after $H_{z}$, only retaining samples 0 and 1
+($f\left[0\right]$ and $g\left[1\right]$). The overall difference equation
+for $H_{p}\left(z\right)$ for samples 0 and 1, in matrix form, is therefore
 \[
+    \resizebox{\linewidth}{!}{
     \begin{pmatrix}
         \ssrsample{y}{0} \\
         \ssrsample{y}{1}
     \end{pmatrix}
     =
     \begin{pmatrix}
-        -P^{M}\chebyu{M-2}{\cos\theta} & P^{M-1}\chebyu{M-1}{\cos\theta} \\
-        -P^{M+1}\chebyu{M-1}{\cos\theta} & P^{M}\chebyu{M}{\cos\theta}
+        -P^{M}\chebyu{M-2}{\alpha} & P^{M-1}\chebyu{M-1}{\alpha} \\
+        -P^{M+1}\chebyu{M-1}{\alpha} & P^{M}\chebyu{M}{\alpha}
     \end{pmatrix}
     \begin{pmatrix}
         \ssrsample{y}{0}z^{-M} \\
@@ -333,9 +376,10 @@ to obtain a difference equation written in matrix form as
     \end{pmatrix}
     +
     \begin{pmatrix}
-        f \\
-        g
+        \ssrsample{f}{0} \\
+        \ssrsample{g}{1}
     \end{pmatrix}
+    }
 \]
 
 This difference equation is then pipelined by substitution, 
@@ -364,30 +408,33 @@ creating a final difference equation of
 
 where
 \begin{align*}
-    \ssrsample{F}{n} = &
-        -P^{M}\chebyu{M-2}{\cos\theta}\ssrsample{f}{n-1}+
-         P^{M-1}\chebyu{M-1}{\cos\theta}\ssrsample{g}{n-1}+
-         \ssrsample{f}{n} \\
-    \ssrsample{G}{n} = &
-        -P^{M+1}\chebyu{M-1}{\cos\theta}\ssrsample{f}{n-1}+
-        P^{M}\chebyu{M}{\cos\theta}\ssrsample{g}{n-1}+
-        \ssrsample{g}{n} \\
+    F = &
+        -P^{M}\chebyu{M-2}{\alpha}z^{-M}\ssrsample{f}{0}+ \\
+        & P^{M-1}\chebyu{M-1}{\alpha}z^{-M}\ssrsample{g}{1}+
+         \ssrsample{f}{0} \\
+    G = &
+        -P^{M+1}\chebyu{M-1}{\alpha}z^{-M}\ssrsample{f}{0}+ \\
+        & P^{M}\chebyu{M}{\alpha}z^{-M}\ssrsample{g}{1}+
+        \ssrsample{g}{1} \\
     C_0 = &
-        P^{2M}\left(\left(\chebyu{M-2}{\cos\theta}\right)^{2} -
-                   \left(\chebyu{M-1}{\cos\theta}\right)^{2}\right) \\
+        P^{2M}\left(\left(\chebyu{M-2}{\alpha}\right)^{2} -
+                   \left(\chebyu{M-1}{\alpha}\right)^{2}\right) \\
     C_1 = &
-        P^{2M-1}\chebyu{M-1}{\cos\theta}\left(
-        \chebyu{M}{\cos\theta}-\chebyu{M-2}{\cos\theta}
+        P^{2M-1}\chebyu{M-1}{\alpha}\left(
+        \chebyu{M}{\alpha}-\chebyu{M-2}{\alpha}
         \right) \\
     C_2 = &
-        P^{2M+1}\chebyu{M-1}{\cos\theta}\left(
-        \chebyu{M-2}{\cos\theta}-\chebyu{M}{\cos\theta}
+        P^{2M+1}\chebyu{M-1}{\alpha}\left(
+        \chebyu{M-2}{\alpha}-\chebyu{M}{\alpha}
         \right) \\
     C_3 = &
-        P^{2M}\left(\left(\chebyu{M}{\cos\theta}\right)^{2} -
-                   \left(\chebyu{M-1}{\cos\theta}\right)^{2}
+        P^{2M}\left(\left(\chebyu{M}{\alpha}\right)^{2} -
+                   \left(\chebyu{M-1}{\alpha}\right)^{2}
              \right) 
 \end{align*}
+This difference equation is a pair of coupled infinite impulse
+response (IIR) filters where the computation can take up to 
+two clock cycles.
 
 The clustered look-ahead implementation here is not guaranteed
 to produce a stable filter, however the regions of stability
@@ -401,7 +448,7 @@ and $460\,\text{MHz}$ all of which would be in the stable region for this design
 
 \begin{figure}
     \begin{center}
-    \includegraphics[width=0.9\textwidth]{plots/notch_phase_space_m_4.png}
+    \includegraphics[width=0.9\linewidth]{plots/notch_phase_space_m_4.png}
     \end{center}
     \caption{Stable phase space for a biquad with $M=4$ when used
     as a simple notch. In the primary PUEO trigger band of 
@@ -418,7 +465,8 @@ implemented in a cascade with serial coefficient programming.
 The $f\left[n-1\right]$ and $g\left[n-1\right]$ terms in the definition
 of $F$ and $G$ are calculated in an additional DSP in the cascade with
 the prior DSP's output looped to its input. This term is the critical
-path in the $F$ and $G$ calculation. Finally, an additional pair of DSPs
+path in the $F$ and $G$ calculation, but could be trivially pipelined
+by breaking the DSP cascade. Finally, an additional pair of DSPs
 calculate the $g$ term in $F$ and the $f$ term in $G$. In total,
 the $H_z$ calculation takes $2M$ DSPs, the $f$/$g$ calculation takes $M-2$/$M-1$
 DSPs respectively (since the $i=0$ term in $f$/$g$ is a simple addition),
@@ -428,8 +476,8 @@ The IIR section consists of a cascade of 4 DSPs with pipeline
 registers carefully chosen to meet timing, as shown in 
 Fig.~\ref{fig:biquaddesign}. Each sample consists of 2 DSPs, with the
 output of the second DSP routed back to the input of the first
-with a pipeline register after the multiplier. This feedback 
-is the critical fabric routing path of the IIR section and
+with a pipeline register after the multiplier. This feedback is
+the critical  fabric routing path of the biquad and
 limits this design to a maximum of $\sim425\,\text{MHz}$ with
 the given device. The second DSP takes in the other sample's output
 with the pipeline register at the input to the DSP. This
@@ -447,7 +495,7 @@ the $f$ and $g$ calculation sections to allow delays to be shared
 between the two portions of the calculation.
 
 An example of the frequency response of the CW rejection section
-programmed as a 4th order bandstop is shown in Fig.~\ref{fig:biquaddesign}.
+programmed as a 4th order bandstop is shown in Fig.~\ref{fig:biquadresp}.
 The DSP resource usage for the biquad breaks down as
 
 \begin{itemize}
@@ -458,15 +506,48 @@ The DSP resource usage for the biquad breaks down as
 
 or $6M+1$ total DSPs (25 for $M=4$). 
 
+% \begin{figure}
+% \begin{subfigure}{\textwidth}
+% \includegraphics[width=0.9\textwidth]{plots/halfband_filter_resp.png}
+% \caption{Frequency response}
+% \label{fig:halfbandFreqResp}
+% \end{subfigure}
+% % FIR filter as block diagram
+% \begin{subfigure}{\textwidth}
+% \begin{center}
+% \input{plots/halfband.tikz}
+% \end{center}
+% \caption{Filter structure}
+% \label{fig:halfbandStructure}
+% \end{subfigure}
+% \caption{Halfband filter response and structure, omitting pipeline
+% registers. Only the structure for sample 7 is shown - the others are
+% identical except for index rotation and input delays.}
+% \label{fig:halfbandFilter}
+% \end{figure}
+
+
 \begin{figure}
+    \begin{subfigure}{\linewidth}
     \begin{center}
     \input{plots/iir.tikz}
     \end{center}
-    \caption{Structure of the IIR section of the programmable
-    biquad. Pipeline registers were carefully chosen to allow
-    the design to meet timing. The critical paths are through
-    the $C_{0}$/$C_{3}$ multiplier.}
+    \caption{Biquad IIR structure}
     \label{fig:biquaddesign}
+    \end{subfigure}
+    \begin{subfigure}{\linewidth}
+    \begin{center}
+    \includegraphics[width=0.9\linewidth]{plots/4TH_ORDER_200gauss_frequnecy_response_notch.png.png}
+    \end{center}
+    \caption{Example frequency response}
+    \label{fig:biquadresp}
+    \end{subfigure}
+    \caption{Biquad IIR structure and example frequency response.
+    The IIR section contains the critical paths of the filter
+    (through the $C_{0}$/$C_{3}$ multiplier) and required specific
+    pipeline register choices to meet timing. The example frequency
+    response uses 2x biquads to provide a 4th order Chebyshev
+    bandstop from $355-385~\textrm{MHz}$.}
 \end{figure}
 
 The CW rejection section can also be placed into a bypass mode
@@ -486,7 +567,7 @@ as shown in Fig.~\ref{fig:cw_mitigation_testing}.
 
 \begin{figure}
     \begin{center}
-    \includegraphics[width=0.9\textwidth]{plots/cw_rej_testing.png}        
+    \includegraphics[width=0.9\linewidth]{plots/cw_rej_testing.png}        
     \end{center}
     \caption{\label{fig:cw_mitigation_testing}CW mitigation testing.
     Injecting a $370~\mathrm{MHz}$ sine wave at $\sim1.75\times$
@@ -608,7 +689,7 @@ times plus the carry chain), corresponding to $\sim0.75\,\text{ns}$
 in the device used, significantly less than the synthesis-generated
 design.
 
-This overall method is similar to that described by Bui et al.
+This overall method is similar to that described independently by Bui et al.
 \cite{bui2014additional} except for signed cases, but optimized
 to ensure as much logic could be integrated into the adder LUTs
 as possible by abandoning generality. While other optimized
@@ -621,6 +702,7 @@ required - the optimized square reduced the slice count of the
 beamforming trigger by $56\%$ alone.
 
 \begin{figure}
+\resizebox{0.95\linewidth}{!}{
 $\begin{array}{cccccccccc}
 s_{14} & s_{13} & s_{12} & s_{11} & s_{10} & s_{9} & s_{8} & s_{7} & s_{6} & s_{5}\\
 \hline 
@@ -628,7 +710,7 @@ T_{14} & T_{13} & \overline{a_{7}a_{4}} & T_{11} & \overline{P_{72}} & \overline
  &  & c_{3} &  & c_{1} & c_{0} & a_{6}a_{1} & d_{1} & d_{0} & P_{40}\\
  &  & \overline{a_{7}a_{3}}c_{2} &  & \bar{d}_{3}a_{4} & d_{3} & d_{2}
 \end{array}$
-
+}
 
 \[
 \begin{array}{cccc}
@@ -744,9 +826,9 @@ for a total experiment trigger rate of $\sim 100~\mathrm{Hz}$.
     & Slices & DSPs \\
     \hline
     Total available on device & 53160 & 4272  \\
-    Signal processing chain (excluding biquads) & 2767 & 584  \\
-    Biquad (each, up to 2) & 800 & 200  \\
-    Beamforming trigger (48 total beams) & 2120 & 120  \\
+    Signal processing chain (excluding biquads) & 2767 (5.2\%) & 584 (13.7\%) \\
+    Biquad (each, up to 2) & 800 (1.5\%) & 200 (4.7\%) \\
+    Beamforming trigger (48 total beams) & 2120 (4.0\%) & 120 (2.8\%) \\
  \hline
 \end{tabular}
 \end{center}
@@ -774,26 +856,30 @@ used $\sim 5\,\mathrm{W}$ of power, and the biquads additionally
 added $\sim 1\,\mathrm{W}$ each in bypass, and an additional
 $\sim1\,\mathrm{W}$ when active. 
 
-
+Synthesis and implementation times for the SURF firmware were additionally
+optimized by relaxing as many timing paths in the system clock domain as
+possible, isolating the trigger portion of the firmware from the
+processing system (freeing up placement) and grouping the squaring logic
+in the same device slice. These optimizations kept build times on the order of
+one hour, allowing for rapid development cycles.
 
 \subsection{Trigger Efficiency}
 
-
 PEUO's trigger behavior can be tested in full operation using simulated Askaryan RF signals, 
-produced using a custom calibration instrument built around a Xilinx ZCU216 RFSoC evaluation board (ZCU216). 
+produced using a custom calibration instrument built around a Xilinx ZCU216 RFSoC evaluation board (ZCU216) by the PUEO collaboration. 
 This calibration instrument, termed the ``RF box'', can produce up to 16 such signals with 
 relative delays between channels that match the arrival times of a plane wave incident on 
 PUEO's antennas from a given direction. The RF box includes variable attenuators that can be 
 used to scale the signal amplitude. The RF box is attached in place of the antennas 
 for two adjacent SURFs, feeding signals first into a 30 dB attenuator and then into PUEO's full RF chain 
 and into the DAQ. The RF box is set to simulate a signal arriving from a direction visible to the 
-beams of both of the SURFs under test. 
+beams of both of the SURFs under test. Details on the RF box will be presented elsewhere.
 
 \begin{figure}
     \begin{center}
-    \includegraphics[width=0.9\textwidth]{plots/efficiency_errFit.png}        
+    \includegraphics[width=0.9\linewidth]{plots/efficiency_errFit.png}        
     \end{center}
-    \caption{\label{fig:efficiency_beamformer} PUEO trigger efficiency, calculated from data taken in the launch facility
+    \caption{\label{fig:efficiency_beamformer} Beamform trigger efficiency, calculated from data taken in the launch facility
     hanger using the RF box. Single-antenna SNR has been scaled by $\frac{3}{4}$ to represent an 8-antenna beam, as described in text.
     }
 \end{figure}
@@ -810,10 +896,24 @@ trigger threshold to a level that provided flight-like trigger rates. Once this 
 disabled and the RF box was set to send signals at 10 Hz.
 
 Various signal sizes were measured in 11 $\sim$2 minute long flight-like data taking runs by changing the programmable attenuation
-of the RF box between runs. The single-antenna SNR for the lowest attenuation, where the signals greatly exceeded the noise level, were calculated using $SNR = \frac{ADC_{max} - ADC_{min}}{2*ADC_{RMS}}$. As the attenuation was increased, the single-antenna SNR was calculated by scaling this initial measurement appropriately. In beamforming, noise adds as $\sqrt{N}$, where $N$ is the number of channels being summed, whereas signals add as $N$. Therefore, since only 6 antennas were instrumented per SURF but all 8 had equivalent noise environments, the equivalent single-antenna SNR for an 8-antenna beam can be calculated from this measurement by scaling the SNR by $\sfrac{\frac{6}{\sqrt{8}}}{\frac{8}{\sqrt{8}}} = \frac{3}{4}$.
+of the RF box between runs. The single-antenna SNR for the lowest attenuation, where the signals greatly exceeded the noise level, were calculated using a definition of
 
-Each event in the data had its time past the GPS second calculated, termed its ``subsecond''. When these subseconds are binned, 10 spikes corresponding to the RF box's 10 Hz pulsing rate are clearly visible for the highest signal amplitude case. The subsecond bins in which these spikes occur can be summed to produce the total number of measured triggers during the expected arrival of the calibration signals (plus noise). Relative clock drift between the two systems was found to be negligible for the length of the test, so these timing windows are reused for low-amplitude signals as well. Noise is subtracted from this sum by measuring the number of events gathered in an equal-width bin offset from the expected arrival subsecond times. The efficiency is then calculated by dividing the number of remaining events from the total number of expected events for the length of the run. This result is shown in Fig.~\ref{fig:efficiency_beamformer}.
+\begin{equation}
+SNR = \frac{ADC_{\textrm{max}} - ADC_{\textrm{min}}}{2 \times ADC_{\textrm{RMS}}}    
+\end{equation}
 
+As the attenuation was increased, the single-antenna SNR was calculated by scaling this initial measurement appropriately. In beamforming, noise adds as $\sqrt{N}$, where $N$ is the number of channels being summed, whereas signals add as $N$. Therefore, since only 6 antennas were instrumented per SURF but all 8 had equivalent noise environments, the equivalent single-antenna SNR for an 8-antenna beam can be calculated from this measurement by scaling the SNR by $\sfrac{\frac{6}{\sqrt{8}}}{\frac{8}{\sqrt{8}}} = \frac{3}{4}$.
+
+Each event in the data had its time past the GPS second calculated, termed its ``subsecond''. When these subseconds are binned, 10 spikes corresponding to the RF box's 10 Hz pulsing rate are clearly visible for the highest signal amplitude case. The subsecond bins in which these spikes occur can be summed to produce the total number of measured triggers during the expected arrival of the calibration signals (plus noise). Relative clock drift between the two systems was found to be negligible for the length of the test, so these timing windows are reused for low-amplitude signals as well. Noise is subtracted from this sum by measuring the number of events gathered in an equal-width bin offset from the expected arrival subsecond times. The efficiency is then calculated by dividing the number of remaining events from the total number of expected events for the length of the run. This result is shown in Fig.~\ref{fig:efficiency_beamformer}. Note that the efficiency as calculated here is not a measurement of PUEO's trigger efficiency during flight, which will be covered elsewhere.
+
+\section{Summary}
+
+We have described the design and implementation of the trigger system for PUEO
+and the techniques used to reduce both the power and overall resource usage.
+The design reached a 50\% single-antenna SNR threshold of $\sim1.5$ in
+lab testing with an overall power consumption for the trigger portion of
+between $5-9~\textrm{W}$ depending on the configuration while utilizing
+$\sim~12\%$ of the slice logic and $\sim26\%$ of the DSPs.
 
 %10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
 
