@@ -113,7 +113,7 @@ detection capability, as shown in Fig.~\ref{fig:triggerfilterchain}.
 Logically, these can be considered broken up into a filter chain
 (to modify the signal response to maximize signal-to-noise and eliminate
 CW), an automatic gain control and bit reduction (AGC-BR) block to reduce
-beamforming resources, and finally the beamforming itself. 
+beamforming resources, and finally the beamforming itself.
 
 \section{Trigger filter chain}
 
@@ -158,29 +158,42 @@ low-pass (halfband) filter to reduce the overall bandwidth to below
 $750\,\text{MHz}$, which also allows the remainder of the trigger chain 
 to decimate by a factor of 2 and operate at $1500\,\text{MSa/s}$,
 reducing power consumption. However, before the AGC-BR block, the signal is restored
-to $3000\,\text{MSa/s}$ by zero padding followed by the same halfband 
+to $3000\,\text{MSa/s}$ by zero stuffing followed by the same halfband 
 filter, allowing for finer beamforming delays.
 
-The halfband filter is a 31-tap FIR filter operating at an SSR of 8 with
+The halfband filter is a 31-tap FIR filter operating at an $M=8$ with
 an additional 1 sample delay to align the center tap with the original
 sample (at $z^{-16}$, two overall system clocks). The transfer
-function is:
+function, organized to show the SSR structure, is:
 
+% \[
+% \resizebox{\hsize}{!}{%
+% 	$H(z)=K
+% 	\begin{pmatrix}
+% 		0 & -23z^{-1} & 0 & +105z^{-3} & 0 & -263z^{-5} & 0 & +526z^{-7}\\
+% 		0 & -949z^{-9} & 0 & +1672z^{-11} & 0 & -3216z^{-13} & 0 & +10342z^{-15}\\
+% 		+2^{14}z^{-16} & +10342z^{-17} & 0 & -3216z^{-19} & 0 & +1672z^{-21} & 0 & -949z^{-23}\\
+% 		0 & +526z^{-25} & 0 & -263z^{-27} & 0 & +105z^{-29} & 0 & -23z^{-31} \\
+% 	\end{pmatrix}
+% 	$%
+% }
+% \]
 
+%% try 2
 \[
 \resizebox{\hsize}{!}{%
-	$H(z)=K
-	\begin{pmatrix}
-		0 & -23z^{-1} & 0 & +105z^{-3} & 0 & -263z^{-5} & 0 & +526z^{-7}\\
-		0 & -949z^{-9} & 0 & +1672z^{-11} & 0 & -3216z^{-13} & 0 & +10342z^{-15}\\
-		+2^{14}z^{-16} & +10342z^{-17} & 0 & -3216z^{-19} & 0 & +1672z^{-21} & 0 & -949z^{-23}\\
-		0 & +526z^{-25} & 0 & -263z^{-27} & 0 & +105z^{-29} & 0 & -23z^{-31} \\
-	\end{pmatrix}
+	$K^{-1}H(z)=
+	\begin{matrix}
+		 & -23z^{-1} &  & +105z^{-3} &  & -263z^{-5} &  & +526z^{-7}\\
+		 & -949z^{-9} &  & +1672z^{-11} &  & -3216z^{-13} &  & +10342z^{-15}\\
+		+2^{14}z^{-16} & +10342z^{-17} &  & -3216z^{-19} &  & +1672z^{-21} &  & -949z^{-23}\\
+		 & +526z^{-25} &  & -263z^{-27} &  & +105z^{-29} &  & -23z^{-31} \\
+	\end{matrix}
 	$%
 }
 \]
 
-where $K=2^{-15}$ for the downsample block and $K=2^{-14}$ for the
+Here $K=2^{-15}$ for the downsample block and $K=2^{-14}$ for the
 upsample block, resulting in a net unity gain for the combination of the
 two. The symmetric nature of the filter lends itself to being
 organized as the sum of two 4-tap systolic filters on individual samples,
@@ -296,10 +309,12 @@ DSP-based design.
 A small number of relatively narrowband interferers are commonly seen in Antarctica, 
 as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS
 \cite{oetting2011mobile} communication satellites at $\sim 370\,\mathrm{MHz}$ and 
-South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. To 
-mitigate this, up to 2 programmable digital biquad filters are implemented in the CW
-rejection block, operating at an SSR factor of 4 $M=4$. These sections implement 
-the transfer function
+South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. Prior 
+balloon flights of the ANITA experiment \cite{allison2018dynamic} used simple tunable
+analog notches for a rejection level of $\sim13~\textrm{dB}$ with a $50~\textrm{MHz}$
+$3~\textrm{dB}$ bandwidth. In PUEO, to mitigate this, up to 2 programmable digital biquad
+filters are implemented in the CW rejection block, operating at an SSR factor $M=4$.
+These sections implement the transfer function
 
 \begin{equation}
 \label{eq:iirtransfer}
@@ -441,10 +456,10 @@ to produce a stable filter, however the regions of stability
 do include the primary bands where CW interference was previously
 seen. When used as a simple notch, the stable frequency/Q phase
 space is shown in Fig.~\ref{fig:stablebiquad}. The main limitations
-occur outside of $150\,\text{MHz}<f<600\,\text{MHz}$. In previous
-balloon flights by the ANITA experiment \cite{allison2018dynamic},
-wide notches (effective $Q$ of $5-7$) were used at $260$, $375$,
-and $460\,\text{MHz}$ all of which would be in the stable region for this design.
+occur outside of $150\,\text{MHz}<f<600\,\text{MHz}$. To equal the
+performance of the analog notches used in ANITA, an effective
+$Q$ of $5-7$ would be needed, all of which would be in the stable
+region for this design.
 
 \begin{figure}
     \begin{center}
@@ -504,7 +519,11 @@ The DSP resource usage for the biquad breaks down as
     \item IIR and incremental computation -- $2M$
 \end{itemize}
 
-or $6M+1$ total DSPs (25 for $M=4$). 
+or $6M+1$ total DSPs (25 for $M=4$). This low DSP count demonstrates the
+necessity of the high complexity of the IIR implementation. The best-case
+FIR implementation (using a notch at $375~\textrm{MHz}$ only, so half
+the coefficients are approximately zero) would require over 48 total DSPs
+to reach the $50~\textrm{MHz}$ notch bandwidth.
 
 % \begin{figure}
 % \begin{subfigure}{\textwidth}
@@ -591,16 +610,17 @@ transmitter at a much lower transmit power.
 
 The last block before the beamforming section is the AGC-BR block,
 which normalizes each of the channels based on thermal noise
-statistics and reduces the overall dynamic range to a symmetric
-signed 5-bit representation -- that is, values are represented as
-a two's complement $x^{\prime}=x-0.5$. The scaling of the AGC-BR 
-block targets an output RMS of $4$, meaning $1\,\text{LSB}=0.25\sigma$ 
-with zero mean - as an example, 0 represents all values from
-$0\dots0.25\sigma$ (on average $0.125\sigma$) and -1 represents all 
-values from $-0.25\dots0\sigma$ (on average $-0.125\sigma$). 
-The symmetric 5-bit representation means that the output now represents
-values between $\pm3.875\sigma$. Values outside this range are clipped 
-to the maximum/minimum values.
+statistics and reduces the overall dynamic range. Prior studies
+\cite{xie2021improving} indicated no loss in trigger efficiency and
+insensitivity to overall scale at a total dynamic range corresponding
+to 5 bits. We therefore reduce to a symmetric signed 5-bit representation 
+-- that is, values are represented as a two's complement $x^{\prime}=x-0.5$. 
+The scaling of the AGC-BR block targets an output RMS of $4$, meaning 
+$1\,\text{LSB}=0.25\sigma$ with zero mean - as an example, 0 represents all
+values from $0\dots0.25\sigma$ (on average $0.125\sigma$) and -1 represents all 
+values from $-0.25\dots0\sigma$ (on average $-0.125\sigma$). The symmetric 5-bit
+representation means that the output now represents values between $\pm3.875\sigma$.
+Values outside this range are clipped to the maximum/minimum values.
 
 In addition to the signed outputs, the AGC-BR block also generates
 the absolute value and $x>2\sigma$ and $x<-2\sigma$ (tail fraction)
@@ -678,14 +698,14 @@ without a carry chain.
 Several bits in the ternary adder were left with unused outputs,
 allowing other secondary terms to be generated,
 reducing the total size to a 10-bit ternary adder (10 LUTs) and
-4 additional auxiliary LUTs (14 LUT6s total), fitting in less 
-than 2 UltraScale slices. For comparison, a synthesis-generated 
-8-bit square generated over 8 slices of logic ($>64\,\mathrm{LUT6}$),
-a logic reduction of over a factor of 4. The worst critical path 
-of the logic consists of 4 levels of logic (3 LUT propagation 
-times plus the carry chain), corresponding to $\sim0.75\,\text{ns}$
-in the device used, significantly less than the synthesis-generated
-design.
+4 additional auxiliary LUTs for the secondary terms (14 LUT6s total), 
+fitting in less than 2 UltraScale slices. For comparison, a
+synthesis-generated 8-bit square generated over 8 slices of logic
+($>64\,\mathrm{LUT6}$), a logic reduction of over a factor of 4.
+The worst critical path of the logic consists of 4 levels of logic
+(3 LUT propagation times plus the carry chain), corresponding to
+$\sim0.75\,\text{ns}$ in the device used, significantly less than
+the synthesis-generated design.
 
 This overall method is similar to that described independently by Bui et al.
 \cite{bui2014additional} except for signed cases, but optimized
@@ -884,8 +904,8 @@ beams of both of the SURFs under test. Details on the RF box will be presented e
 
 Measurements of the trigger efficiency were made using this test configuration while on the 
 ground at McMurdo Station's Long Duration Balloon (LDB) launch facility, prior to the instrument flight. 
-Due to space constraints in the launch facility hangar only the 12 lower-ring antenna paths were attached to the RF box,
-the top-ring front-end amplifiers were terminated, providing a similar noise environment without the
+Due to space constraints in the launch facility hangar, only the 12 lower-ring antenna paths were attached to the RF box.
+The top-ring front-end amplifiers were terminated, providing a similar noise environment without the
 simulated signal. The signal direction was chosen to be arriving from $-15^{\circ}$ in elevation and $-5^{\circ}$ in azimuth, 
 relative to the midline between the four instrumented phi sectors. Due to time constraints, this was the only 
 rigorously measured direction during this test, but was chosen to be representative of coverage in the most likely
