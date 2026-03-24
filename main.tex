@@ -28,15 +28,23 @@
 The Payload for Ultrahigh Energy Observations (PUEO) \cite{Abarr_2021} is a balloon-borne
 instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV}$.
 It represents a significant improvement in balloon-borne detection of radio
-signals from ultrahigh energy particle cascades via the Askaryan effect, 
-utilizing direct radio-frequency (RF) digitization at $3\,\text{GSa/s}$
-to coherently sum the signals from up to 8 antennas in multiple (48 implemented) beamformed
-directions at once. In addition, significant pre-trigger signal processing is
-used to enhance the overall signal-to-noise ratio (SNR) prior to the beamform process.
+signals from ultrahigh energy particle cascades either via the Askaryan effect or
+geomagnetic emissions reflected off of the ice surface. PUEO utilizes direct 
+radio-frequency (RF) digitization at $3~\textrm{GSa/s}$ to coherently sum the signals
+from up to 8 antennas in multiple (48 implemented) beamformed directions at once. 
+In addition, significant pre-trigger signal processing is used to enhance the 
+overall signal-to-noise ratio (SNR) prior to the beamform process. The signals of
+interest in PUEO are highly impulsive and wideband, which drives the design
+of the trigger. 
 
 Here we cover the design, implementation, and preflight performance of the trigger
 system for PUEO. Full performance of the trigger during the 2025-2026 flight will 
 be covered elsewhere.
+
+The main contributions of this work are the implementation of a fully digital trigger
+chain at $3~\textrm{GSa/s}$, a low-power FPGA realization of a matched filtering and
+beamforming, a resource-efficient radio frequency interference (RFI) mitigation
+implementation, and preflight validation of the resulting trigger efficiency.
 
 \subsection{Instrument overview}
 
@@ -107,19 +115,19 @@ trigger time quantization of $24~\textrm{samples}$. The position of the trigger 
 the $1024~\textrm{sample}$ readout window is programmable and was tuned to place
 the trigger approximately at $300~\textrm{samples}$ ($100~\textrm{ns}$).
 
-The trigger system for PUEO is fully digital and contains multiple signal 
-processing blocks prior to beamforming to maximize the instrument's
-detection capability, as shown in Fig.~\ref{fig:triggerfilterchain}.
-Logically, these can be considered broken up into a filter chain
-(to modify the signal response to maximize signal-to-noise and eliminate
-CW), an automatic gain control and bit reduction (AGC-BR) block to reduce
-beamforming resources, and finally the beamforming itself.
+The PUEO trigger is fully digital and is discussed in three stages, with an
+overall block diagram shown in Fig.~\ref{fig:triggerfilterchain}. The first stage
+is a filter chain that shapes the signal response to improve SNR and optionally 
+suppress man-made RF interference. The second stage is an automatic
+gain control and bit-reduction block (AGC-BR) which normalizes channel amplitudes
+while reducing resource usage in the beamformer. The final stage performs beamforming
+and envelope-based thresholding to generate the L1 trigger.
 
 \section{Trigger filter chain}
 
 The filter chain consists of (in order) a downsampling block, a matched filter,
-an optional CW rejection block, and finally an upsampling block before the
-AGC-BR. The CW rejection portion of the filter chain consists of up to 2
+an optional RFI rejection block, and finally an upsampling block before the
+AGC-BR. The RFI rejection portion of the filter chain consists of up to 2
 programmable digital biquad filters. Due to power management needs, builds
 containing 0, 1, or 2 biquads are selectable during normal operation. Both
 the upsampling and downsampling blocks are based on the same 31-tap finite
@@ -140,7 +148,7 @@ $3~\textrm{GSa/s}$.
 
 The downsampling, upsampling, and AGC-BR blocks operate at 
 $3000\,\text{MSa/s}$ with a supersample rate (SSR) factor of 8 ($M=8$).
-The intermediate (matched filter, CW rejection) blocks operate at
+The intermediate (matched filter, RFI rejection) blocks operate at
 $1500\,\text{MSa/s}$ with an SSR factor of 4 ($M=4$), both at a system
 clock rate of $375\,\text{MHz}$.
 
@@ -260,12 +268,12 @@ identical except for index rotation and input delays.}
 
 \subsection{Matched filter block}
 
-The matched filter block mitigates the effect of the antenna and signal
-processing chain on the SNR of the input signal. In order to implement a
-power and resource-efficient matched filter, a multiplierless filter
-was developed by exploiting the fact that the impulse response of the system
-has an approximately exponential falloff in voltage. Therefore, the impulse
-response was normalized to the peak value, and individual samples were
+The matched filter block compensates for the combined impulse response of the 
+antenna and front-end chain, thereby improving the trigger SNR. To minimize
+power and resource usage, we approximate this response with a multiplierless
+filter with powers-of-2 coefficients. This is an efficient approximation
+as the impulse response has an approximately exponential falloff in voltage.
+The impulse was response was normalized to the peak value, and individual samples were
 rounded to $0$, $\pm\frac{1}{4}$, $\pm\frac{1}{2}$, or $\pm1$.
 A comparison of the normalized impulse response (post-halfband filter)
 and the simplified impulse response in both the time and frequency
@@ -304,16 +312,16 @@ filter allows it to be implemented efficiently in the FPGA fabric as
 sets of ternary adders, which was found to be more power-efficient than a
 DSP-based design.
 
-\subsection{CW rejection block}
+\subsection{RFI rejection block}
 
-A small number of relatively narrowband interferers are commonly seen in Antarctica, 
-as observed on prior flights of the ANITA experiment. The primary interferers are the MUOS
-\cite{oetting2011mobile} communication satellites at $\sim 370\,\mathrm{MHz}$ and 
-South Pole LMR radios and air traffic control at $\sim 450\,\mathrm{MHz}$. Prior 
-balloon flights of the ANITA experiment \cite{allison2018dynamic} used simple tunable
-analog notches for a rejection level of $\sim13~\textrm{dB}$ with a $50~\textrm{MHz}$
-$3~\textrm{dB}$ bandwidth. In PUEO, to mitigate this, up to 2 programmable digital biquad
-filters are implemented in the CW rejection block, operating at an SSR factor $M=4$.
+Narrowband interferers previously observed in Antarctica, particularly 
+MUOS \cite{oetting2011mobile} at $360-380~\textrm{MHz}$ and South Pole radio
+transmitters near $450~\textrm{MHz}$, can generate excessive trigger rates
+for the antennas in view. Prior  balloon flights of the ANITA experiment
+\cite{allison2018dynamic} used simple tunable analog notches for a rejection
+level of $\sim13~\textrm{dB}$ with a $50~\textrm{MHz}$ $3~\textrm{dB}$ bandwidth.
+In PUEO, to mitigate this, up to 2 programmable digital biquad filters are 
+implemented in the RFI rejection block, operating at an SSR factor $M=4$.
 These sections implement the transfer function
 
 \begin{equation}
@@ -374,6 +382,7 @@ As a difference equation, this is a finite impulse response (FIR) filter,
 applied to the input after $H_{z}$, only retaining samples 0 and 1
 ($f\left[0\right]$ and $g\left[1\right]$). The overall difference equation
 for $H_{p}\left(z\right)$ for samples 0 and 1, in matrix form, is therefore
+
 \[
     \resizebox{\linewidth}{!}{
     \begin{pmatrix}
@@ -447,13 +456,14 @@ where
                    \left(\chebyu{M-1}{\alpha}\right)^{2}
              \right) 
 \end{align*}
+
 This difference equation is a pair of coupled infinite impulse
 response (IIR) filters where the computation can take up to 
 two clock cycles.
 
 The clustered look-ahead implementation here is not guaranteed
 to produce a stable filter, however the regions of stability
-do include the primary bands where CW interference was previously
+do include the primary bands where RF interference was previously
 seen. When used as a simple notch, the stable frequency/Q phase
 space is shown in Fig.~\ref{fig:stablebiquad}. The main limitations
 occur outside of $150\,\text{MHz}<f<600\,\text{MHz}$. To equal the
@@ -509,7 +519,7 @@ samples. The input $x\left[i\right]$ terms needed are propagated through
 the $f$ and $g$ calculation sections to allow delays to be shared
 between the two portions of the calculation.
 
-An example of the frequency response of the CW rejection section
+An example of the frequency response of the RFI rejection section
 programmed as a 4th order bandstop is shown in Fig.~\ref{fig:biquadresp}.
 The DSP resource usage for the biquad breaks down as
 
@@ -569,7 +579,7 @@ to reach the $50~\textrm{MHz}$ notch bandwidth.
     bandstop from $355-385~\textrm{MHz}$.}
 \end{figure}
 
-The CW rejection section can also be placed into a bypass mode
+The RFI rejection section can also be placed into a bypass mode
 where the overall transfer function is switched to $H\left(z\right)=1$
 by swapping the $b_{1}$ coefficient to 1 and forcing the multiplier
 outputs in the DSPs sequentially into reset. The overall trigger
@@ -577,18 +587,18 @@ is blocked during these transition periods to prevent glitching
 issues. These transitions can be commanded globally to allow the
 notches to only apply to specific channels as needed.
 
-Preflight tests of the CW rejection were performed by viewing
+Preflight tests of the RFI rejection were performed by viewing
 the scale value from the AGC-BR block (see Sec.~\ref{sec:agc_br}).
 A sine wave at $370~\mathrm{MHz}$ was injected into 6 channels
 at an amplitude of $\sim1.75\times$ the thermal noise RMS. When
-enabled, the AGC-BR scale returned to its no-CW value,
+enabled, the AGC-BR scale returned to its no-RFI value,
 as shown in Fig.~\ref{fig:cw_mitigation_testing}.
 
 \begin{figure}
     \begin{center}
     \includegraphics[width=0.9\linewidth]{plots/cw_rej_testing.png}        
     \end{center}
-    \caption{\label{fig:cw_mitigation_testing}CW mitigation testing.
+    \caption{\label{fig:cw_mitigation_testing}RFI mitigation testing.
     Injecting a $370~\mathrm{MHz}$ sine wave at $\sim1.75\times$
     thermal RMS with no mitigation resulted in a $\sim1.8\times$
     decrease in the AGC-BR scale to compensate. Enabling the CW
@@ -596,15 +606,14 @@ as shown in Fig.~\ref{fig:cw_mitigation_testing}.
     }
 \end{figure}
 
-Due to thermal issues during the 2025-2026 PUEO flight, only the
-firmware with the CW rejection section excluded was used. The loss
-of this functionality primarily affects the portion of the
-instrument where CW becomes significant compared to thermal
-noise, which tended to be $\sim17\%$ of the total phi sectors -
-this relatively small amount was due to the atypical flight
-path which generally kept multiple MUOS satellites out of view, as 
-well as South Pole policy changes which kept the $450\,\mathrm{MHz}$ 
-transmitter at a much lower transmit power.
+Due to thermal constraints during the 2025-2026 PUEO flight, the system
+was operated only with firmware with RFI rejection disabled. In practice,
+this primarily affected the subset of phi sectors in which RFI became
+significant relative to thermal noise, which amounted to approximately
+17\% during this flight. This relatively small fraction was due to the
+atypical flight path, which generally kept multiple MUOS satellites out of
+view, and to South Pole policy changes that reduced the transmit power of
+the $450~\textrm{MHz}$ transmitter.
 
 \section{\label{sec:agc_br}Automatic gain control and bit reduction block (AGC-BR)}
 
@@ -642,8 +651,10 @@ sufficient given the overall variation in the analog signal path.
 
 \section{Beamforming and trigger}
 
-The output of the signal-processing chain is
-beamformed into 48 virtual antenna beams. For each beam, a signal envelope is formed and thresholded to generate a trigger.
+The output of the signal-processing chain is beamformed into 48 virtual antenna 
+beams. For each beam, we compute a simple signal envelope by squaring the samples
+and summing them over a short sliding window; threshold crossings then generate
+the trigger.
 
 The 48 total beams consist of 35 8-channel beams spanning from 
 $\sim0^\circ$ to $\sim-17^\circ$ in zenith and 13 6-channel beams 
@@ -927,12 +938,12 @@ Each event in the data had its time past the GPS second calculated, termed its `
 
 \section{Summary}
 
-We have described the design and implementation of the trigger system for PUEO
-and the techniques used to reduce both the power and overall resource usage.
-The design reached a 50\% single-antenna SNR threshold of $\sim1.5$ in
-lab testing with an overall power consumption for the trigger portion of
-between $5-9~\textrm{W}$ depending on the configuration while utilizing
-$\sim~12\%$ of the slice logic and $\sim26\%$ of the DSPs.
+We have presented a fully digital, low-power trigger system for PUEO that combines
+matched filtering, dynamic normalization, RFI mitigation, and real-time beamforming
+in the RFSoC fabric. In laboratory tests, the system achieved a 50\% trigger efficiency
+at a scaled single-antenna SNR of approximately 1.5 while consuming $5-9~\textrm{W}$ in
+the trigger portion and using about 12\% of slice logic and 26\% of DSP resources,
+depending on configuration.
 
 %10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
 
