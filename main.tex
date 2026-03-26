@@ -28,7 +28,7 @@
 The Payload for Ultrahigh Energy Observations (PUEO) \cite{Abarr_2021} is a balloon-borne
 instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV}$.
 It represents a significant improvement in balloon-borne detection of radio
-signals from ultrahigh energy particle cascades either via the Askaryan effect or
+signals from ultrahigh energy (UHE) particle cascades either via the Askaryan effect or
 geomagnetic emissions reflected off of the ice surface. PUEO utilizes direct 
 radio-frequency (RF) digitization at $3~\textrm{GSa/s}$ to coherently sum the signals
 from up to 8 antennas in multiple (48 implemented) beamformed directions at once. 
@@ -44,7 +44,9 @@ be covered elsewhere.
 The main contributions of this work are the implementation of a fully digital trigger
 chain at $3~\textrm{GSa/s}$, a low-power FPGA realization of a matched filtering and
 beamforming, a resource-efficient radio frequency interference (RFI) mitigation
-implementation, and preflight validation of the resulting trigger efficiency.
+implementation, and preflight validation of the resulting trigger efficiency. This
+work expands on similar digital beamforming triggers for UHE Askaryan signals
+(
 
 \subsection{Instrument overview}
 
@@ -926,10 +928,9 @@ Due to space constraints in the launch facility hangar, only the 12 lower-ring a
 The top-ring front-end amplifiers were terminated, providing a similar noise environment without the
 simulated signal. The signal direction was chosen to be arriving from $-15^{\circ}$ in elevation and $-5^{\circ}$ in azimuth, 
 relative to the midline between the four instrumented phi sectors. Due to time constraints, this was the only 
-rigorously measured direction during this test, but was chosen to be representative of coverage in the most likely
+exhaustively measured direction during this test, but was chosen to be representative of coverage in the most likely
 arrival directions. Prior to data taking, the flight software threshold control servo was allowed to adjust the 
-trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled, the servo was 
-disabled and the RF box was set to send signals at 10 Hz.
+trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled the RF box was set to send signals at 10 Hz, significantly below the servo's target rate.
 
 Various signal sizes were measured in 11 approximately 2 minute-long flight-like data taking runs by changing the programmable attenuation
 of the RF box between runs. The single-antenna SNR for the lowest attenuation, where the signals greatly exceeded the noise level, was
