@@ -578,6 +578,8 @@ to reach the $50~\textrm{MHz}$ notch bandwidth.
     \end{subfigure}
     \caption{Biquad IIR structure and example frequency response
     using the implemented design versus floating-point idealization. 
+    FPGA implementation frequency response was measured by injecting
+    Gaussian noise and examining the output.
     The IIR section contains the critical paths of the filter
     (through the $C_{0}$/$C_{3}$ multiplier) and required specific
     pipeline register choices to meet timing. The example frequency
