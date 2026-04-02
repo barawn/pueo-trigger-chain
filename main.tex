@@ -1,5 +1,6 @@
 \documentclass{IEEEtran}
 \usepackage{graphicx} % Required for inserting images
+\usepackage{orcidlink}
 \usepackage{subcaption}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{adjustbox}
@@ -20,40 +21,59 @@
 
 \begin{document}
 
+\bstctlcite{IEEEexample:BSTcontrol}
+
 \maketitle
 \linenumbers
 
+\begin{abstract}
+The Payload for Ultrahigh Energy Observations (PUEO) is a NASA balloon-borne
+instrument for the detection of ultra-high energy (UHE) neutrinos with
+energies above $10^{17.5}~\textrm{eV}$ via either the Askaryan effect or geomagnetic
+emissions from an upward-going air shower. The main instrument trigger system
+for PUEO is a fully digital supersample rate beamformer based on 24 Xilinx Radio
+Frequency System-on-a-Chip (RFSoC) digitizers sampling 192 channels operating 
+at $3~\textrm{GSa/s}$ and a system clock frequency of $375~\textrm{MHz}$. The
+trigger implements frequency band conditioning, dynamic radio-frequency
+interference (RFI) rejection, and matched filtering, with significant emphasis
+on optimization to reduce both the power and resource usage while maintaining
+sensitivity. The system implements 48 total synthetic antenna beams with
+up to 8 antennas each, covering a $\sim25^\circ$ range in zenith and
+$\sim60^\circ$ range in azimuth. Preflight testing demonstrated a trigger
+performance of a minimum signal-to-noise ratio (SNR) of $\sim1.5$ using
+simulated signals while consuming between $5-7~\textrm{W}$ in the trigger logic.
+\end{abstract}
+
 \section{Introduction}
 
-The Payload for Ultrahigh Energy Observations (PUEO) \cite{Abarr_2021} is a balloon-borne
-instrument for the detection of neutrinos with energy above $10^{17.5}\,\text{eV}$.
-It represents a significant improvement in balloon-borne detection of radio
-signals from ultrahigh energy (UHE) particle cascades either via the Askaryan effect or
-geomagnetic emissions reflected off of the ice surface. PUEO utilizes direct 
-radio-frequency (RF) digitization at $3~\textrm{GSa/s}$ to coherently sum the signals
-from up to 8 antennas in multiple (48 implemented) beamformed directions at once. 
-In addition, significant pre-trigger signal processing is used to enhance the 
-overall signal-to-noise ratio (SNR) prior to the beamform process. The signals of
-interest in PUEO are highly impulsive and wideband, which drives the design
-of the trigger. 
+At UHE energies ($>10^{17.5}~\textrm{eV}$), neutrino interactions produce
+broadband, highly impulsive radio emission from high-energy cascades either in
+the ice through the Askaryan effect \cite{PhysRevLett.99.171101} or via
+geomagnetic emission \cite{PhysRevLett.116.141103}. The Payload for Ultrahigh
+Energy Observations (PUEO) \cite{Abarr_2021} is a balloon-borne instrument designed for the detection of these neutrinos above the Antarctic ice. It represents a
+significant improvement in balloon-borne detection of radio signals from
+ultrahigh energy (UHE) particle cascades either via the Askaryan effect or
+geomagnetic emissions from upward-going air showers. PUEO utilizes direct 
+radio-frequency (RF) digitization at $3~\textrm{GSa/s}$ to coherently sum the
+signals from up to 8 antennas in multiple (48 implemented) beamformed
+directions at once. In addition, significant pre-trigger signal processing is
+used to enhance the overall signal-to-noise ratio (SNR) prior to the
+beamform process. Here we cover the design, implementation, and preflight
+performance of the trigger system for PUEO. Full performance of the trigger
+during the 2025-2026 flight will be covered elsewhere.
 
-Here we cover the design, implementation, and preflight performance of the trigger
-system for PUEO. Full performance of the trigger during the 2025-2026 flight will 
-be covered elsewhere.
-
-The main contributions of this work are the implementation of a fully digital trigger
-chain at $3~\textrm{GSa/s}$, a low-power FPGA realization of a matched filtering and
-beamforming, a resource-efficient radio frequency interference (RFI) mitigation
-implementation, and preflight validation of the resulting trigger efficiency. This
-work expands on similar digital beamforming triggers for UHE Askaryan signals
-(
+This work expands on the ARA experiment's phased array detector \cite{ALLISON2019112} 
+and the balloon-borne ANITA UHE neutrino detector \cite{PhysRevD.99.122001}. The main
+contributions of this work are the implementation of a fully digital trigger
+chain at $3~\textrm{GSa/s}$, a low-power field-programmable gate array (FPGA) realization of a matched filtering and
+beamforming, a resource-efficient radio-frequency interference (RFI) mitigation
+implementation, and preflight validation of the resulting trigger efficiency.
 
 \subsection{Instrument overview}
 
 The PUEO main instrument consists of 24 Sampling Unit for RF (SURFv6) modules
 with Trenz Elektronik TE0835 modules, each containing a Xilinx Radio Frequency 
-System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density field programmable
-gate array (FPGA) termed the PL, a quad-core ARM processing system termed the PS,
+System-on-a-Chip (RFSoC) XCZU47DR, a combination of a high-density programmable logic (PL) fabric and a quad-core ARM processing system (PS),
 and an 8-channel high-speed ADC configured to operate at $3000~\textrm{MSa/s}$.
 Each SURF handles 8 individual RF channels, giving a total of 192 input channels, 
 split between horizontal and vertical polarizations. An additional two SURFs handle a
@@ -265,7 +285,7 @@ confirmed the overall beamforming is not affected.
 \label{fig:halfbandStructure}
 \end{subfigure}
 \caption{Halfband filter response and structure, omitting pipeline
-registers. Only the structure for sample 7 is shown - the others are
+registers. Only the structure for sample 7 is shown -- the others are
 identical except for index rotation and input delays.}
 \label{fig:halfbandFilter}
 \end{figure}
@@ -277,7 +297,7 @@ antenna and front-end chain, thereby improving the trigger SNR. To minimize
 power and resource usage, we approximate this response with a multiplierless
 filter with powers-of-2 coefficients. This is an efficient approximation
 as the impulse response has an approximately exponential falloff in voltage.
-The impulse was response was normalized to the peak value, and individual samples were
+The impulse response was normalized to the peak value, and individual samples were
 rounded to $0$, $\pm\frac{1}{4}$, $\pm\frac{1}{2}$, or $\pm1$.
 A comparison of the normalized impulse response (post-halfband filter)
 and the simplified impulse response in both the time and frequency
@@ -321,8 +341,8 @@ DSP-based design.
 Narrowband interferers previously observed in Antarctica, particularly 
 MUOS \cite{oetting2011mobile} at $360-380~\textrm{MHz}$ and South Pole radio
 transmitters near $450~\textrm{MHz}$, can generate excessive trigger rates
-for the antennas in view. Prior  balloon flights of the ANITA experiment
-\cite{allison2018dynamic} used simple tunable analog notches for a rejection
+for the antennas in view. Prior balloon flights of the ANITA experiment
+\cite{ALLISON201847} used simple tunable analog notches for a rejection
 level of $\sim13~\textrm{dB}$ with a $50~\textrm{MHz}$ $3~\textrm{dB}$ bandwidth.
 In PUEO, to mitigate this, up to 2 programmable digital biquad filters are 
 implemented in the RFI rejection block, operating at an SSR factor $M=4$.
@@ -633,7 +653,7 @@ insensitivity to overall scale at a total dynamic range corresponding
 to 5 bits. We therefore reduce to a symmetric signed 5-bit representation 
 -- that is, values are represented as a two's complement $x^{\prime}=x-0.5$. 
 The scaling of the AGC-BR block targets an output RMS of $4$, meaning 
-$1\,\text{LSB}=0.25\sigma$ with zero mean - as an example, 0 represents all
+$1\,\text{LSB}=0.25\sigma$ with zero mean -- as an example, 0 represents all
 values from $0\dots0.25\sigma$ (on average $0.125\sigma$) and -1 represents all 
 values from $-0.25\dots0\sigma$ (on average $-0.125\sigma$). The symmetric 5-bit
 representation means that the output now represents values between $\pm3.875\sigma$.
@@ -683,7 +703,7 @@ quantization of time steps. The two antennas in the
 top ring are similarly combined (``top'' sub-beam), and then the
 left, right, and top sub-beams are delayed relative to each other
 and summed to form the final 8-channel collection of 35 total beams.
-The 6 channel beams (without the large baseline from the top antennas)
+The 6-channel beams (without the large baseline from the top antennas)
 were formed by adding only the left and right sub-beams.
 
 Each of the sub-beams as well as their final combination into full
@@ -736,7 +756,7 @@ these were focused on building efficient larger-width squarers
 or for direct ASIC implementation, and the detailed size of small 
 squarers was not clear. The aggressive optimization here is most
 appropriate because of the large number of squares ($384~\mathrm{total}$) 
-required - the optimized square reduced the slice count of the
+required -- the optimized square reduced the slice count of the
 beamforming trigger by $56\%$ alone.
 
 \begin{figure}
@@ -803,7 +823,7 @@ clock cycle, and retain only the larger of the two. This max sum
 is then added to the sum of samples 0 to 3, generating the max of
 $\sum_{i=4}^{7}x\left[i\right]z^{-8}+\sum_{i=0}^{3}x\left[i\right]$
 and $\sum_{i=0}^{7}x\left[i\right]$. This value is then thresholded
-twice - one threshold is used to generate the trigger output of
+twice -- one threshold is used to generate the trigger output of
 that beam, and the second threshold is used as a subtrigger
 monitoring threshold to allow observation of the beam behavior with
 higher statistics.
@@ -932,7 +952,7 @@ simulated signal. The signal direction was chosen to be arriving from $-15^{\cir
 relative to the midline between the four instrumented phi sectors. Due to time constraints, this was the only 
 exhaustively measured direction during this test, but was chosen to be representative of coverage in the most likely
 arrival directions. Prior to data taking, the flight software threshold control servo was allowed to adjust the 
-trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled the RF box was set to send signals at 10 Hz, significantly below the servo's target rate.
+trigger threshold to a level that provided flight-like trigger rates. Once this threshold value settled, the RF box was set to send signals at 10 Hz, significantly below the servo's target rate.
 
 Various signal sizes were measured in 11 approximately 2 minute-long flight-like data taking runs by changing the programmable attenuation
 of the RF box between runs. The single-antenna SNR for the lowest attenuation, where the signals greatly exceeded the noise level, was
@@ -957,9 +977,7 @@ depending on configuration.
 
 %10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
 
-
-
-\bibliographystyle{plain}
+\bibliographystyle{IEEEtran}
 \bibliography{refs}
 
 \end{document}
