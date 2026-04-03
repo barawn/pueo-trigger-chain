@@ -5,6 +5,9 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{adjustbox}
 \usepackage{tikz}
+\usetikzlibrary{external}
+\tikzexternalize % activate!
+
 \usepackage{xfrac}
 \usepackage{textcomp,nicefrac}
 \usepackage[switch]{lineno}
@@ -14,17 +17,29 @@
 \newcommand{\z}{\mathpzc{z}}
 \newcommand{\chebyu}[2]{U_{#1}\left(#2\right)}
 \newcommand{\ssrsample}[2]{#1\left[#2\right]}
+% IEEE stuff
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\markboth{IEEE TRANSACTIONS ON NUCLEAR SCIENCE, VOL. XX, NO. XX, XXXX
+2025}{Q. Abarr \MakeLowercase{\textit{et al.}}: Trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
 
-\title{Trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
-\author{P.S.~Allison, L.W.~Beaufore}
-\date{March 2026}
 
 \begin{document}
+
+\title{Trigger system for the Payload for Ultrahigh Energy Observations (PUEO) balloon-borne neutrino detector}
+
+\include{pueoieee_authors.tex}
+%\author{P.S.~Allison, L.W.~Beaufore}
+\renewcommand\footnotemark{}
+\renewcommand\footnoterule{}
+\thanks{Manuscript submitted April XX, 2026. Support information goes here.}
+\include{pueoieee_institutes.tex}
 
 \bstctlcite{IEEEexample:BSTcontrol}
 
 \maketitle
 \linenumbers
+
 
 \begin{abstract}
 The Payload for Ultrahigh Energy Observations (PUEO) is a NASA balloon-borne
@@ -43,6 +58,10 @@ $\sim60^\circ$ range in azimuth. Preflight testing demonstrated a trigger
 performance of a minimum signal-to-noise ratio (SNR) of $\sim1.5$ using
 simulated signals while consuming between $5-7~\textrm{W}$ in the trigger logic.
 \end{abstract}
+
+\begin{IEEEkeywords}
+Field programmable gate array (FPGA), triggering, neutrinos, digital signal processing.
+\end{IEEEkeywords}
 
 \section{Introduction}
 
