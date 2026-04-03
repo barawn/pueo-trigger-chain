@@ -426,17 +426,18 @@ applied to the input after $H_{z}$, only retaining samples 0 and 1
 ($f\left[0\right]$ and $g\left[1\right]$). The overall difference equation
 for $H_{p}\left(z\right)$ for samples 0 and 1, in matrix form, is therefore
 
-\[
-    \resizebox{\linewidth}{!}{
+\begin{multline*}
     \begin{pmatrix}
         \ssrsample{y}{0} \\
         \ssrsample{y}{1}
     \end{pmatrix}
     =
+    P^{M-1}
     \begin{pmatrix}
-        -P^{M}\chebyu{M-2}{\alpha} & P^{M-1}\chebyu{M-1}{\alpha} \\
-        -P^{M+1}\chebyu{M-1}{\alpha} & P^{M}\chebyu{M}{\alpha}
+        -P\chebyu{M-2}{\alpha} & \chebyu{M-1}{\alpha} \\
+        -P^{2}\chebyu{M-1}{\alpha} & P\chebyu{M}{\alpha}
     \end{pmatrix}
+    \\
     \begin{pmatrix}
         \ssrsample{y}{0}z^{-M} \\
         \ssrsample{y}{1}z^{-M}
@@ -446,13 +447,13 @@ for $H_{p}\left(z\right)$ for samples 0 and 1, in matrix form, is therefore
         \ssrsample{f}{0} \\
         \ssrsample{g}{1}
     \end{pmatrix}
-    }
-\]
+\end{multline*}
 
 This difference equation is then pipelined by substitution, 
 creating a final difference equation of
 
-\[
+\begin{equation}
+\label{eq:finaldifference}
     \begin{pmatrix}
         \ssrsample{y}{0} \\
         \ssrsample{y}{1}
@@ -471,7 +472,7 @@ creating a final difference equation of
         F \\
         G
     \end{pmatrix}
-\]
+\end{equation}
 
 where
 \begin{align*}
@@ -500,7 +501,7 @@ where
              \right) 
 \end{align*}
 
-This difference equation is a pair of coupled infinite impulse
+Eq.~\ref{eq:finaldifference} is a pair of coupled infinite impulse
 response (IIR) filters where the computation can take up to 
 two clock cycles.
 
