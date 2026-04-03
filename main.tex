@@ -5,8 +5,8 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{adjustbox}
 \usepackage{tikz}
-\usetikzlibrary{external}
-\tikzexternalize % activate!
+% \usetikzlibrary{external}
+% \tikzexternalize % activate!
 
 \usepackage{xfrac}
 \usepackage{textcomp,nicefrac}
@@ -296,9 +296,10 @@ confirmed the overall beamforming is not affected.
 % the resizebox is.
 \begin{subfigure}{0.9\linewidth}
 \begin{center}
-\resizebox{0.9\linewidth}{!}{
-\input{plots/halfband.tikz}
-}
+\includegraphics{plots/crop_halfband_2.pdf}
+% \resizebox{0.9\linewidth}{!}{
+% \input{plots/halfband.tikz}
+% }
 \end{center}
 \caption{Filter structure}
 \label{fig:halfbandStructure}
@@ -604,7 +605,8 @@ to reach the $50~\textrm{MHz}$ notch bandwidth.
 \begin{figure}
     \begin{subfigure}{\linewidth}
     \begin{center}
-    \input{plots/iir.tikz}
+    \includegraphics{plots/crop_iir.pdf}
+    % \input{plots/iir.tikz}
     \end{center}
     \caption{Biquad IIR structure}
     \label{fig:biquaddesign}
