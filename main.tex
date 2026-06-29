@@ -4,7 +4,7 @@
 \usepackage{subcaption}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{adjustbox}
-\usepackage{tikz}
+% \usepackage{tikz}
 % \usetikzlibrary{external}
 % \tikzexternalize % activate!
 
@@ -32,13 +32,13 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 %\author{P.S.~Allison, L.W.~Beaufore}
 \renewcommand\footnotemark{}
 \renewcommand\footnoterule{}
-\thanks{Manuscript submitted April XX, 2026. Support information goes here.}
+\thanks{Manuscript submitted XX, 2026. See the acknowledgements sections for support information.}
 \include{pueoieee_institutes.tex}
 
 \bstctlcite{IEEEexample:BSTcontrol}
 
 \maketitle
-\linenumbers
+%\linenumbers
 
 
 \begin{abstract}
@@ -65,13 +65,12 @@ Field programmable gate array (FPGA), triggering, neutrinos, digital signal proc
 
 \section{Introduction}
 
-At UHE energies ($>10^{17.5}~\textrm{eV}$), neutrino interactions produce
+At ultra-high energies (UHE, $>10^{17.5}~\textrm{eV}$), neutrino interactions produce
 broadband, highly impulsive radio emission from high-energy cascades either in
 the ice through the Askaryan effect \cite{PhysRevLett.99.171101} or via
 geomagnetic emission \cite{PhysRevLett.116.141103}. The Payload for Ultrahigh
 Energy Observations (PUEO) \cite{Abarr_2021} is a balloon-borne instrument designed for the detection of these neutrinos above the Antarctic ice. It represents a
-significant improvement in balloon-borne detection of radio signals from
-ultrahigh energy (UHE) particle cascades either via the Askaryan effect or
+significant improvement in balloon-borne detection of radio signals from UHE particle cascades either via the Askaryan effect or
 geomagnetic emissions from upward-going air showers. PUEO utilizes direct 
 radio-frequency (RF) digitization at $3~\textrm{GSa/s}$ to coherently sum the
 signals from up to 8 antennas in multiple (48 implemented) beamformed
@@ -959,10 +958,10 @@ beams of both of the SURFs under test. Details on the RF box will be presented e
 
 \begin{figure}
     \begin{center}
-    \includegraphics[width=0.9\linewidth]{plots/efficiency_errFit.png}        
+    \includegraphics[width=0.9\linewidth]{plots/Efficiency_Updated_PUEOSim.png}        
     \end{center}
     \caption{\label{fig:efficiency_beamformer} Beamform trigger efficiency, calculated from data taken in the launch facility
-    hangar using the RF box. Single-antenna SNR has been scaled by $\frac{3}{4}$ to represent an 8-antenna beam, as described in text.
+    hangar using the RF box. Single-antenna SNR has been scaled by $\frac{3}{4}$ to represent an 8-antenna beam, as described in text. PUEO's Monte Carlo instrument simulation, PUEOSim, is plotted in gray for comparison.
     }
 \end{figure}
 
@@ -996,6 +995,14 @@ in the RFSoC fabric. In laboratory tests, the system achieved a 50\% trigger eff
 at a scaled single-antenna SNR of approximately 1.5 while consuming $5-9~\textrm{W}$ in
 the trigger portion and using about 12\% of slice logic and 26\% of DSP resources,
 depending on configuration.
+
+\section{Acknowledgments}
+
+The PUEO Collaboration acknowledges the significant
+contributions to this manuscript by Patrick S. Allison
+and Lucas W. Beaufore.
+
+\input{acknowledgements.tex}
 
 %10:13AM Beamformer attentuation set to 10dB, antennas have 30dB. All L2s are unmasked. Run 719. Beamformer set to 5 Az, -15 El, pulsed at 10 Hz 
 
